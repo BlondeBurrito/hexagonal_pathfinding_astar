@@ -2,9 +2,9 @@ name: Windows
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     
 env:
   CARGO_TERM_COLOR: always
@@ -20,14 +20,13 @@ jobs:
         with:
           command: install
           args: install -f cargo-binutils
-      - name: Install latest nightly
+      - name: Install latest
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
-          components: llvm-tools-preview
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --features bevy/dynamic
+          args: --release

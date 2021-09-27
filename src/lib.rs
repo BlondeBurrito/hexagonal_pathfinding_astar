@@ -12,8 +12,6 @@
 //!  \         /
 //!   \_______/
 
-use bevy::math::Vec3;
-use bevy::math::Vec2;
 use ::std::collections::HashMap;
 
 /// Specifies the orientation of the hexagon space. This is important for determining the available nodes during expansion
@@ -27,35 +25,33 @@ pub enum HexOrientation {
 /// The nodes input is structured such:
 /// 
 /// * The keys are tuples of the nodes position in a grid with the (0,0) origin being based on the bottom left
-/// * The values are tuples of the form (size, weighting)
+/// * The values are tuples of the form (complexity, weighting)
 /// 
-/// Size is the measure of distance from the center of a hexagon to the center point of an edge
+/// Complexity is a measure of how difficult it is to traverse a hexagon from one side to the other.
 /// 
 /// E.g
-/// ```
+/// ```txt
 ///    ___________
 ///   /     ^     \
 ///  /      |      \
-/// /  Size |       \
-/// \               /
-///  \             /
+/// /  C    |       \
+/// \       |       /
+///  \      ▼      /
 ///   \___________/
 /// ```
 /// 
-/// You may think for a grid of perfectly flush hexagons that size should be identical everywhere and yes, you're right. What is meant by size is more a measure of time. Imagine leaving your house and standing by the side of a road. You want to go to a shop and there's two to choose from, one to the left and one to the right. They are both the same distance away from you however if you go left you'll have to walk through a busy high street whereas going right leads to a much quieter area of town. To complete your shopping as quickly as possible you'll want to go right. This is what I mean by size, it isn't a measure of distance, all distances are the same, rather it is a measure of how quickly you can traverse that distance.
-/// 
-/// Another example, say you're a character in an RPG standing on a hexagon which denotes an open space. If you move North to the next hexagon you'll be standing in a forest. For a period of time the 'size' you'll be moving through is an open space i.e quick, once you cross the hexagon boundary into the forest you'll be moving more slowly towards the center of that hexagon.
+/// For a grid of perfectly flush hexagons the distance from the center to the midpoint of an edge is the same in all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from the center of one hexagon to another in a straight line, but while distance is static you'll find that as you cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
 /// 
 /// The return Vec contains a number of tuples where the first element is the coordinates of a node and
 /// the second element is the weighting of that particular node
 pub fn astar_path(
 	start_node: (usize, usize),
-	nodes: HashMap<(usize, usize), (f32, Vec3, f32)>,
+	nodes: HashMap<(usize, usize), (f32, f32)>,
 	end_node: (usize, usize),
 	max_column: usize,
 	max_row: usize,
 	orientation: HexOrientation,
-) -> Vec<(Vec2, f32)> {
+) -> Vec<(usize, usize)> {
 	let mut best_path = Vec::new();
 	// A-star algorithm (based on Dijkstra's algorithim)
 	// https://www.youtube.com/watch?v=6TsL96NAZCo
@@ -78,8 +74,8 @@ pub fn astar_path(
 	queue.push((
 		start_node.clone(),
 		// lookup the distance and weighting of the starting_node based on the full nodes data set
-		a_star_score(nodes[&start_node].2, nodes[&start_node].0),
-		Vec::new(),
+		a_star_score(nodes[&start_node].1, nodes[&start_node].0),
+		// Vec::new(),
 	));
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
 	while queue[0].0 != end_node {
@@ -283,8 +279,8 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 	}
 }
 /// Determines a weighting used to guide the algorithm, low weightings are better
-fn a_star_score(distance: f32, weighting: f32) -> f32 {
-	distance + weighting
+fn a_star_score(complexity: f32, weighting: f32) -> f32 {
+	complexity + weighting
 }
 
 

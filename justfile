@@ -5,14 +5,14 @@ alias d := doc
 alias b := build
 # alias r := run
 
-test:
-  cargo test --release
-
 doc:
   cargo doc --release
 
-build: test doc
+build: doc
   cargo build --release
+
+test: build
+  cargo test --release
 
 # run: build
 #   cargo run --release
