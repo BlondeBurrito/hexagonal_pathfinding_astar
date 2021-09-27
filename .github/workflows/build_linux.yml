@@ -1,0 +1,29 @@
+name: Linux
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    
+env:
+  CARGO_TERM_COLOR: always
+    
+jobs:
+  build_and_test:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Install fast compile dependencies
+        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev clang lld
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --features bevy/dynamic
