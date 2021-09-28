@@ -202,7 +202,7 @@ Cargo.toml
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar" tag = "0.2.0" }
+hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar", tag = "0.2.0" }
 ```
 
 ```rust
