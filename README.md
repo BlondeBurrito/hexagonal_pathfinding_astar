@@ -33,8 +33,8 @@ I've created it as I'm currently building a game using the [Bevy](https://github
 
 Limitations:
 
-* Your hexagon grid can have no more than usize::MAX/2 columns, otherwise it'll panic on overflow
-* Your hexagon grid can have no more than usize::MAX/2 rows, otherwise it'll panic on overflow
+* Your hexagon grid can have no more than `usize::MAX/2 columns`, otherwise it'll panic on overflow
+* Your hexagon grid can have no more than `usize::MAX/2 rows`, otherwise it'll panic on overflow
 
 Table of contents
 

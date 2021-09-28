@@ -1,35 +1,129 @@
-//! blah
+//! This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the center of one hexagon to the next along a line orthogonal to a hexagon edge.
+//!
+//! The calculations are dpendent on the layout of your hexagon grid.
+//!
+//! ## Hexagon Layout/Orientation
+//!
+//! There are different ways in which a hexagon grid can be portrayed which in turn affects the discoverable neighbouring hexagons for path traversal. This library assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left - a deviation from this and the calcualtion simply won't work. Additionally a hexagon is herbey referred to as a 'node'.
+//!
+//! Each node has a label defining its position, known as `(column, row)`. NB: the `column` and `row` values can never be negative.
+//!
+//! ### Flat Topped - odd columns shifted up
 //! 
-//! 
-//! 
-//! 
-//! 
-//! 
-//! 
-//!    _______
-//!   /       \
-//!  /         \
-//!  \         /
-//!   \_______/
+//! ```txt
+//!              _______
+//!             /       \
+//!     _______/  (1,1)  \_______
+//!    /       \         /       \
+//!   /  (0,1)  \_______/  (2,1)  \
+//!   \         /       \         /
+//!    \_______/  (1,0)  \_______/
+//!    /       \         /       \
+//!   /  (0,0)  \_______/  (2,0)  \
+//!   \         /       \         /
+//!    \_______/         \_______/
+//! ```
+//!
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the `column` value by one.
+//!
+//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have to increment both the `column` value and the `row` value. I.e the calculation changes depending on whether the odd column has been shifted up or down.
+//!
+//! In full for a node in an even column we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row - 1)
+//! north-west = (column - 1, row)
+//! ```
+//!
+//! And for a node in an odd column the node neighbours can be found:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row + 1)
+//! south-east = (column + 1, row)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
+//!
+//! ### Flat Topped - odd columns shifted down
+//!
+//! ```txt
+//!     _______           _______
+//!    /       \         /       \
+//!   /  (0,1)  \_______/  (2,1)  \
+//!   \         /       \         /
+//!    \_______/  (1,1)  \_______/
+//!    /       \         /       \
+//!   /  (0,0)  \_______/  (2,0)  \
+//!   \         /       \         /
+//!    \_______/  (1,0)  \_______/
+//!            \         /
+//!             \_______/
+//! ```
 
-use core::panic;
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and `row` values by one.
+//!
+//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to only increment the `column` value by one.
+//!
+//! In full for a node in an even column we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row + 1)
+//! south-east = (column + 1, row)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
+//!
+//! And for a node in an odd column the node neighbours can be found:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row - 1)
+//! north-west = (column - 1, row)
+//! ```
+
+
 use ::std::collections::HashMap;
+use core::panic;
 
-/// Specifies the orientation of the hexagon space. This is important for determining the available nodes during expansion
+/// Specifies the orientation of the hexagon space. This is important for determining the available neighbouring nodes during expansion.
+/// 
+/// Flat-top odd columns moved up
+///```txt
+///       ___
+///   ___/ O \
+///  / E \___/
+///  \___/
+///```
+/// Flat-top odd columns moved down
+/// ```txt
+///   ___
+///  / E \___
+///  \___/ O \
+///      \___/
+/// ```
 pub enum HexOrientation {
 	FlatTopOddUp,
 	FlatTopOddDown,
 }
 
 /// From a starting node calculate the most efficient path to the end node
-/// 
-/// The nodes input is structured such:
-/// 
-/// * The keys are tuples of the nodes position in a grid with the (0,0) origin being based on the bottom left
-/// * The values are tuples of the form (complexity, weighting)
-/// 
-/// Complexity is a measure of how difficult it is to traverse a hexagon from one side to the other.
-/// 
+///
+/// The `nodes` input is structured such:
+///
+/// * The keys are tuples of the nodes position in a grid with the (0,0) origin being based on the bottom left, (x,y) heading along right and up
+/// * The values are the complexity of traversing a particular node
+///
 /// E.g
 /// ```txt
 ///    ___________
@@ -40,11 +134,14 @@ pub enum HexOrientation {
 ///  \      ▼      /
 ///   \___________/
 /// ```
-/// 
+///
 /// For a grid of perfectly flush hexagons the distance from the center to the midpoint of an edge is the same in all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from the center of one hexagon to another in a straight line, but while distance is static you'll find that as you cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
 /// 
-/// The return Vec contains a number of tuples where the first element is the coordinates of a node and
-/// the second element is the weighting of that particular node
+/// `max_column` and `max_row` indicate the boundary of the hexagon space and are exclusive. For instance with a square grid space where the top most right node is positioned at (3, 3) our `max_column` and `max_row` will both equal `4`.
+/// 
+/// `orientation` refers to your hexagonal grid layout.
+///
+/// The return Vec contains a number of tuples which for `0..n` show the best path to take
 pub fn astar_path(
 	start_node: (usize, usize),
 	nodes: HashMap<(usize, usize), f32>,
@@ -55,10 +152,16 @@ pub fn astar_path(
 ) -> Vec<(usize, usize)> {
 	// ensure nodes data contains start and end points
 	if !nodes.contains_key(&start_node) {
-		panic!("Node data does not contain start node ({},{})", start_node.0, start_node.1);
+		panic!(
+			"Node data does not contain start node ({},{})",
+			start_node.0, start_node.1
+		);
 	}
 	if !nodes.contains_key(&end_node) {
-		panic!("Node data does not contain start node ({},{})", end_node.0, end_node.1);
+		panic!(
+			"Node data does not contain end node ({},{})",
+			end_node.0, end_node.1
+		);
 	}
 	// ensure start and end nodes are within the max bounds of the grid
 	// max bounds are exclusive hence equal to or greater than
@@ -73,7 +176,10 @@ pub fn astar_path(
 	let mut nodes_weighted: HashMap<(usize, usize), (f32, f32)> = HashMap::new();
 	// calculate a weighting for each node based on its distance from the end node
 	for (k, v) in nodes.iter() {
-		nodes_weighted.insert(k.to_owned(), (v.to_owned(), calculate_node_weight(k, &end_node)));
+		nodes_weighted.insert(
+			k.to_owned(),
+			(v.to_owned(), calculate_node_weight(k, &end_node)),
+		);
 	}
 
 	// every time we process a new node we add it to a map
@@ -90,16 +196,17 @@ pub fn astar_path(
 	queue.push((
 		start_node.clone(),
 		start_astar.clone(),
-		Vec::<(usize,usize)>::new(),
+		Vec::<(usize, usize)>::new(),
 		0.5 * nodes_weighted[&start_node].0,
 	));
-	
+
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
 	while queue[0].0 != end_node {
 		// remove the first element ready for processing
 		let current_path = queue.swap_remove(0);
 		// expand the node in the current path
-		let available_nodes = expand_neighrbor_nodes(current_path.0, &orientation, max_column, max_row);
+		let available_nodes =
+			expand_neighrbor_nodes(current_path.0, &orientation, max_column, max_row);
 		// process each new path
 		for n in available_nodes.iter() {
 			// calculate its fields
@@ -117,10 +224,10 @@ pub fn astar_path(
 					q.2 = previous_nodes_traversed.clone();
 					q.3 = complexity;
 					no_record_of_node = false;
-				} else if &q.0 == n && &q.1 < &astar{
-					// we discard the new path as the queue alread contains a better one
+				} else if &q.0 == n && &q.1 < &astar {
+					// we discard the new path as the queue already contains a better one
 				};
-			};
+			}
 			if no_record_of_node {
 				queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
 			}
@@ -134,7 +241,7 @@ pub fn astar_path(
 			}
 		}
 
-		// sort the queue by a-star sores
+		// sort the queue by a-star sores so each loop we process the best
 		queue.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 	}
 	let mut best_path = queue[0].2.clone();
@@ -148,7 +255,12 @@ pub fn astar_path(
 /// and considered a boundary of the hexagon grid space.
 /// Likewise the `max_column` and `max_row` inputs define the outer boundary of the grid space, note they are exclusive values.
 /// This means that for most source hexagons 6 neighbours will be expanded but for those lining the boundaries fewer neighrbors will be discovered
-fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, max_column: usize, max_row: usize) -> Vec<(usize, usize)> {
+fn expand_neighrbor_nodes(
+	source: (usize, usize),
+	orientation: &HexOrientation,
+	max_column: usize,
+	max_row: usize,
+) -> Vec<(usize, usize)> {
 	let mut neighbours = Vec::new();
 	// starting from north round a tile clockwise
 	// https://www.redblobgames.com/grids/hexagons/
@@ -174,7 +286,7 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 					neighbours.push((source.0 + 1, source.1 - 1));
 				};
 				// south
-				if  source.1.checked_sub(1) != None {
+				if source.1.checked_sub(1) != None {
 					neighbours.push((source.0, source.1 - 1));
 				};
 				// south-west
@@ -185,8 +297,9 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 				if source.0.checked_sub(1) != None {
 					neighbours.push((source.0 - 1, source.1));
 				}
-				return neighbours
-			} else { // odd column
+				return neighbours;
+			} else {
+				// odd column
 				// north
 				if source.1 + 1 < max_row {
 					neighbours.push((source.0, source.1 + 1));
@@ -211,7 +324,7 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 				if source.0.checked_sub(1) != None && source.1 + 1 < max_row {
 					neighbours.push((source.0 - 1, source.1 + 1))
 				}
-				return neighbours
+				return neighbours;
 			}
 		}
 		//   ___
@@ -246,8 +359,9 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 				if source.0.checked_sub(1) != None && source.1 + 1 < max_row {
 					neighbours.push((source.0 - 1, source.1 + 1));
 				}
-				return neighbours
-			} else { // odd column
+				return neighbours;
+			} else {
+				// odd column
 				// north
 				if source.1 + 1 < max_row {
 					neighbours.push((source.0, source.1 + 1))
@@ -272,7 +386,7 @@ fn expand_neighrbor_nodes(source: (usize, usize), orientation: &HexOrientation, 
 				if source.0.checked_sub(1) != None {
 					neighbours.push((source.0 - 1, source.1))
 				}
-				return neighbours
+				return neighbours;
 			}
 		}
 	}
@@ -301,14 +415,13 @@ fn calculate_node_weight(current_node: &(usize, usize), end_node: &(usize, usize
 	delta_x_squared + delta_y_squared
 }
 
-
 #[cfg(test)]
 mod tests {
-	use std::collections::HashMap;
-	use crate::HexOrientation;
 	use crate::astar_path;
-use crate::calculate_node_weight;
-use crate::expand_neighrbor_nodes;
+	use crate::calculate_node_weight;
+	use crate::expand_neighrbor_nodes;
+	use crate::HexOrientation;
+	use std::collections::HashMap;
 
 	#[test]
 	/// Expands an even columned node in a flat topped odd column shifted up alignment and tests that the correct neighbours are returned
@@ -461,7 +574,7 @@ use crate::expand_neighrbor_nodes;
 		assert_eq!(expected_neighbour_count, neighbours.len());
 	}
 	#[test]
-	/// Calcualtes a node weight where the end node is located in the +ve x- direction
+	/// Calcualtes a nodes weight where the end node is located in the +ve x-y direction
 	/// ```txt
 	///    _______           _______
 	///   /       \         /       \
@@ -477,7 +590,7 @@ use crate::expand_neighrbor_nodes;
 		assert_eq!(actual_weight, weight);
 	}
 	#[test]
-	/// Calcualtes a node weight where the end node is located in the -ve x-y direction
+	/// Calcualtes a nodes weight where the end node is located in the -ve x-y direction
 	/// ```txt
 	///    _______           _______
 	///   /       \         /       \
@@ -543,28 +656,35 @@ use crate::expand_neighrbor_nodes;
 	fn astar() {
 		let start_node: (usize, usize) = (0, 0);
 		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
-		nodes.insert((0,0), 1.0);
-		nodes.insert((0,1), 1.0);
-		nodes.insert((0,2), 1.0);
-		nodes.insert((0,3), 3.0);
-		nodes.insert((1,0), 2.0);
-		nodes.insert((1,1), 9.0);
-		nodes.insert((1,2), 4.0);
-		nodes.insert((1,3), 2.0);
-		nodes.insert((2,0), 2.0);
-		nodes.insert((2,1), 6.0);
-		nodes.insert((2,2), 8.0);
-		nodes.insert((2,3), 9.0);
-		nodes.insert((3,0), 3.0);
-		nodes.insert((3,1), 4.0);
-		nodes.insert((3,2), 5.0);
-		nodes.insert((3,3), 2.0);
+		nodes.insert((0, 0), 1.0);
+		nodes.insert((0, 1), 1.0);
+		nodes.insert((0, 2), 1.0);
+		nodes.insert((0, 3), 3.0);
+		nodes.insert((1, 0), 2.0);
+		nodes.insert((1, 1), 9.0);
+		nodes.insert((1, 2), 4.0);
+		nodes.insert((1, 3), 2.0);
+		nodes.insert((2, 0), 2.0);
+		nodes.insert((2, 1), 6.0);
+		nodes.insert((2, 2), 8.0);
+		nodes.insert((2, 3), 9.0);
+		nodes.insert((3, 0), 3.0);
+		nodes.insert((3, 1), 4.0);
+		nodes.insert((3, 2), 5.0);
+		nodes.insert((3, 3), 2.0);
 		let end_node: (usize, usize) = (3, 3);
 		let max_column = 4;
 		let max_row = 4;
 		let orientation = HexOrientation::FlatTopOddUp;
-		let best = astar_path(start_node, nodes, end_node, max_column, max_row, orientation);
-		let actual = vec![(0,0), (0,1), (0,2), (1,2), (2,3), (3,3)];
+		let best = astar_path(
+			start_node,
+			nodes,
+			end_node,
+			max_column,
+			max_row,
+			orientation,
+		);
+		let actual = vec![(0, 0), (0, 1), (0, 2), (1, 2), (2, 3), (3, 3)];
 		assert_eq!(actual, best);
 	}
 }
