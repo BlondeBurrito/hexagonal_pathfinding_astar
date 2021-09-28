@@ -3,7 +3,7 @@
 
 # hexagonal_pathfinding_astar
 
-This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the center of one hexagon to the next along a line orthogonal to a hexagon edge.
+This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
 
 It's rather different in that it follows a convention whereby a hexagon has a measurement which reflects the difficulty of traversing a distance over time called complexity (don't ask why I didn't name it velocity).
 
@@ -19,11 +19,11 @@ E.g
    \___________/
 ```
 
-For a grid of perfectly flush hexagons the distance from the center to the midpoint of an edge is the same in all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from the center of one hexagon to another in a straight line, but while distance is static you'll find that as you cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
+For a grid of perfectly flush hexagons the distance from the centre to the midpoint of an edge is the same in all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from the centre of one hexagon to another in a straight line, but while distance is static you'll find that as you cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
 
 Generic example: Imagine leaving your house and standing by the side of a road. You want to go to a shop and there's two to choose from, one to the left and one to the right. They are both 100 meters away from you however if you go left you'll have to walk through a busy high street whereas going right leads to a much quieter area of town where you can ride a bicycle. To complete your shopping as quickly as possible you'll want to go right. This is what I mean by complexity, it isn't a measure of a hexagons width, all distances are the same, rather it is a measure of how quickly you can traverse it.
 
-Another example, say you're a character in an RPG standing on a hexagon which denotes an open space. If you move East to the next hexagon you'll be standing in a forest. For a period of time in your starting hexagon you'll be moving at a good pace, once you cross the hexagon boundary into the forest you'll be moving more slowly towards the center of that hexagon.
+Another example, say you're a character in an RPG standing on a hexagon which denotes an open space. If you move East to the next hexagon you'll be standing in a forest. For a period of time in your starting hexagon you'll be moving at a good pace, once you cross the hexagon boundary into the forest you'll be moving more slowly towards the centre of that hexagon.
 
 <img src="docs/hexagon_size.png" alt="hex" width="370"/>
 
