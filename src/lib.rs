@@ -181,7 +181,7 @@ pub fn astar_path(
 		panic!("Start node is outside of searchable grid")
 	}
 	if end_node.0 >= max_column || end_node.1 >= max_row {
-		panic!("Start node is outside of searchable grid")
+		panic!("End node is outside of searchable grid")
 	}
 	// calculate the weight of each node and produce a new combined data set of everthing we need
 	// keys are nodes and values are a tuple of (complexity, weight)
