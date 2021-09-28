@@ -33,8 +33,8 @@ I've created it as I'm currently building a game using the [Bevy](https://github
 
 Limitations:
 
-* Your hexagon grid can have no more than `usize::MAX/2 columns`, otherwise it'll panic on overflow
-* Your hexagon grid can have no more than `usize::MAX/2 rows`, otherwise it'll panic on overflow
+* Your hexagon grid can have no more than `usize::MAX -1` columns, otherwise it'll panic on overflow
+* Your hexagon grid can have no more than `usize::MAX -1` rows, otherwise it'll panic on overflow
 
 Table of contents
 
@@ -197,6 +197,13 @@ north-west = (column - 1, row)
 ```
 
 ## How to use <a name="howto"></a>
+
+Cargo.toml
+
+```toml
+[dependencies]
+hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar" version = "0.1.0" }
+```
 
 ```rust
 // you are here
