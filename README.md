@@ -25,7 +25,7 @@ Generic example: Imagine leaving your house and standing by the side of a road. 
 
 Another example, say you're a character in an RPG standing on a hexagon which denotes an open space. If you move East to the next hexagon you'll be standing in a forest. For a period of time in your starting hexagon you'll be moving at a good pace, once you cross the hexagon boundary into the forest you'll be moving more slowly towards the center of that hexagon.
 
-![Alt text](docs/hexagon_size.png)
+<img src="docs/hexagon_size.png" alt="hex" width="370"/>
 
 This library is all about calculating movement as if you're in some bizarre hexagon world moving along strict paths.
 
