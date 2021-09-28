@@ -620,7 +620,7 @@ mod tests {
 		assert_eq!(actual_weight, weight);
 	}
 	#[test]
-	/// Calcualtes the bets path from S to E
+	/// Calcualtes the best path from S to E
 	///```txt
 	///                 _________               _________
 	///                /         \             /         \
