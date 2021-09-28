@@ -43,8 +43,9 @@ Table of contents
 3. [Hexagon Layout/Orientation](#orientation)
     1. [Flat Topped - odd columns shifted up](#ftou)
     1. [Flat Topped - odd columns shifted down](#ftod)
-4. [Example - Simple Complexities: A-Star for Flat Topped Odd Column Shifted Up Grid](#example1)
-5. [Example - Varying Complexity: A-Star for Flat Topped Odd Column Shifted Up](#example2)
+4. [How to use](#howto)
+5. [Example - Simple Complexities: A-Star for Flat Topped Odd Column Shifted Up Grid](#example1)
+6. [Example - Varying Complexity: A-Star for Flat Topped Odd Column Shifted Up](#example2)
 
 ## A-Star Super Simple in Brief <a name="simpleExplanation"></a>
 
@@ -193,6 +194,41 @@ south-east = (column + 1, row - 1)
 south      = (column, row -1)
 south-west = (column - 1, row - 1)
 north-west = (column - 1, row)
+```
+
+## How to use <a name="howto"></a>
+
+```rust
+// you are here
+let start_node: (usize, usize) = (0, 0);
+// keys are nodes, values are your measure of 'complexity' to traverse it
+let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
+nodes.insert((0,0), 1.0);
+nodes.insert((0,1), 1.0);
+nodes.insert((0,2), 1.0);
+nodes.insert((0,3), 3.0);
+nodes.insert((1,0), 2.0);
+nodes.insert((1,1), 9.0);
+nodes.insert((1,2), 4.0);
+nodes.insert((1,3), 2.0);
+nodes.insert((2,0), 2.0);
+nodes.insert((2,1), 6.0);
+nodes.insert((2,2), 8.0);
+nodes.insert((2,3), 9.0);
+nodes.insert((3,0), 3.0);
+nodes.insert((3,1), 4.0);
+nodes.insert((3,2), 5.0);
+nodes.insert((3,3), 2.0);
+// you want to go here
+let end_node: (usize, usize) = (3, 3);
+// the 'exclusive' limit of grid size
+let max_column = 4;
+let max_row = 4;
+// the hexagon arrangement you are using
+let orientation = HexOrientation::FlatTopOddUp;
+let best = astar_path(start_node, nodes, end_node, max_column, max_row, orientation);
+// answer using above data = [(0,0), (0,1), (0,2), (1,2), (2,3), (3,3)]
+// the manual calculation for this can be found in Example - Varying Complexity: A-Star for Flat Topped Odd Column Shifted Up
 ```
 
 ## Example - Simple Complexities: A-Star for Flat Topped Odd Column Shifted Up <a name="example1"></a>
