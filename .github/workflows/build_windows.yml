@@ -15,11 +15,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Cargo bin-utils
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: install -f cargo-binutils
       - name: Install latest
         uses: actions-rs/toolchain@v1
         with:
