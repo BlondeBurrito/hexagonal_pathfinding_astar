@@ -194,12 +194,12 @@ pub fn astar_path(
 		);
 	}
 
-	// every time we process a new node we add it to a map
-	// if a node already has already been recorded then we replace it if it has a better a-star score (smaller number) otherwise we discard it
-	let mut node_astar_scores: HashMap<(usize, usize), f32> = HashMap::new();
-	// add starting node a-star score to data set
+	// // every time we process a new node we add it to a map
+	// // if a node already has already been recorded then we replace it if it has a better a-star score (smaller number) otherwise we discard it
+	// let mut node_astar_scores: HashMap<(usize, usize), f32> = HashMap::new();
+	// // add starting node a-star score to data set
 	let start_astar = a_star_score(nodes_weighted[&start_node].0, nodes_weighted[&start_node].1);
-	node_astar_scores.insert(start_node.clone(), start_astar.clone());
+	// node_astar_scores.insert(start_node.clone(), start_astar.clone());
 
 	// create a queue of nodes to be processed based on discovery
 	// of form (current_node, a_star_score, vec_previous_nodes_traversed, total_complexity)
@@ -243,14 +243,14 @@ pub fn astar_path(
 			if no_record_of_node {
 				queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
 			}
-			// update the a-star data set
-			if node_astar_scores.contains_key(&n) {
-				if node_astar_scores.get(&n) > Some(&astar) {
-					node_astar_scores.insert(n.clone(), astar);
-				}
-			} else {
-				node_astar_scores.insert(n.clone(), astar);
-			}
+			// // update the a-star data set
+			// if node_astar_scores.contains_key(&n) {
+			// 	if node_astar_scores.get(&n) > Some(&astar) {
+			// 		node_astar_scores.insert(n.clone(), astar);
+			// 	}
+			// } else {
+			// 	node_astar_scores.insert(n.clone(), astar);
+			// }
 		}
 
 		// sort the queue by a-star sores so each loop processes the best
