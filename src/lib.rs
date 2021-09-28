@@ -147,9 +147,14 @@ pub enum HexOrientation {
 ///   \___________/
 /// ```
 ///
-/// For a grid of perfectly flush hexagons the distance from the centre to the midpoint of an edge is the same in all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from the centre of one hexagon to another in a straight line, but while distance is static you'll find that as you cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
+/// For a grid of perfectly flush hexagons the distance from the centre to the midpoint of an edge is the same in
+/// all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from
+/// the centre of one hexagon to another in a straight line, but while distance is static you'll find that as you
+/// cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
 /// 
-/// `max_column` and `max_row` indicate the boundary of the hexagon space and are exclusive. For instance with a square grid space where the top most right node is positioned at (3, 3) our `max_column` and `max_row` will both equal `4`.
+/// `max_column` and `max_row` indicate the boundary of the hexagon space and are exclusive. For instance with a
+/// square grid space where the top most right node is positioned at (3, 3) our `max_column` and `max_row`
+/// will both equal `4`.
 /// 
 /// `orientation` refers to your hexagonal grid layout.
 ///
