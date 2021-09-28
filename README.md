@@ -31,6 +31,11 @@ This library is all about calculating movement as if you're in some bizarre hexa
 
 I've created it as I'm currently building a game using the [Bevy](https://github.com/bevyengine/bevy) engine. It's a procedural hexagonal world where each hexagon can be a different biome, such as mountains, plains, desert. The biome impacts the speed which you can cross the hexagon and is played in realtime so you not only feel crossing the width of space denoted by a hexagon but also you feel the impact of the underlying terrain.
 
+Limitations:
+
+* Your hexagon grid can have no more than usize::MAX/2 columns, otherwise it'll panic on overflow
+* Your hexagon grid can have no more than usize::MAX/2 rows, otherwise it'll panic on overflow
+
 Table of contents
 
 1. [A-Star Super Simple in Brief](#simpleExplanation)
