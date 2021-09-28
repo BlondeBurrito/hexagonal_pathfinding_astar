@@ -205,6 +205,8 @@ Cargo.toml
 hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar", tag = "0.2.0" }
 ```
 
+Part of `xyz.rs`
+
 ```rust
 // you are here
 let start_node: (usize, usize) = (0, 0);
