@@ -1,5 +1,5 @@
 [package]
-name = "bevy_pathfinding_astar"
+name = "hexagonal_pathfinding_astar"
 version = "0.1.0"
 authors = ["BlondeBurrito"]
 edition = "2018"

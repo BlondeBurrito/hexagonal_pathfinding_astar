@@ -1,4 +1,7 @@
-# bevy_pathfinding_astar
+![linux](https://github.com/BlondeBurrito/hexagonal_pathfinding_astar/actions/workflows/build_linux.yml/badge.svg)
+![windows](https://github.com/BlondeBurrito/hexagonal_pathfinding_astar/actions/workflows/build_windows.yml/badge.svg)
+
+# hexagonal_pathfinding_astar
 
 This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the center of one hexagon to the next along a line orthogonal to a hexagon edge.
 

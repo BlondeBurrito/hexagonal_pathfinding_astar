@@ -11,7 +11,7 @@ env:
     
 jobs:
   build_and_test:
-    name: build
+    name: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,8 +20,8 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - name: Build
+      - name: Test
         uses: actions-rs/cargo@v1
         with:
-          command: build
+          command: test
           args: --release
