@@ -49,7 +49,7 @@ Table of contents
 
 ## A-Star Super Simple in Brief <a name="simpleExplanation"></a>
 
-This is my super basic breakdown of A-Star which uses the traditional distance instead of my custom complexity (ou could use it to work out which roads to drive down in the countryside to reach some destination).
+This is my super basic breakdown of A-Star which uses the traditional distance instead of my custom complexity (you could use it to work out which roads to drive down in the countryside to reach some destination).
 
 If we take a starting point `S` and wish to move to end point `E` we have two paths we could choose to traverse, to `O1` or to `O2`.
 
