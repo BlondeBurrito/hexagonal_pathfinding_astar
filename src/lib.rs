@@ -207,7 +207,7 @@ pub fn astar_path(
 	// add starting node to queue
 	queue.push((
 		start_node.clone(),
-		start_astar.clone(),
+		start_astar,
 		Vec::<(usize, usize)>::new(),
 		0.5 * nodes_weighted[&start_node].0,
 	));
@@ -253,7 +253,7 @@ pub fn astar_path(
 			}
 		}
 
-		// sort the queue by a-star sores so each loop we process the best
+		// sort the queue by a-star sores so each loop processes the best
 		queue.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 	}
 	let mut best_path = queue[0].2.clone();
