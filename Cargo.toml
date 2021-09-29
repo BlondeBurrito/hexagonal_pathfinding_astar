@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["BlondeBurrito"]
 edition = "2018"
 keywords = ["pathfinding", "astar", "a-star", "A*"]
+license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
