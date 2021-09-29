@@ -220,8 +220,10 @@ pub fn astar_path(
 			expand_neighrbor_nodes(current_path.0, &orientation, max_column, max_row);
 		// process each new path
 		for n in available_nodes.iter() {
+			let current_node_complexity: f32 = 0.5 *  &nodes_weighted[&current_path.0].0;
+			let target_node_complexity: f32 = 0.5 * nodes_weighted[&n].0;
 			// calculate its fields
-			let complexity = current_path.3 + 0.5 * nodes_weighted[&n].0;
+			let complexity = current_path.3 + target_node_complexity;
 			let astar = a_star_score(complexity, nodes_weighted[&n].1);
 			let mut previous_nodes_traversed = current_path.2.clone();
 			previous_nodes_traversed.push(current_path.0);
@@ -410,7 +412,7 @@ fn calculate_node_weight(current_node: &(usize, usize), end_node: &(usize, usize
 	} else {
 		(current_node.0 - end_node.0).pow(2) as f32
 	};
-	let delta_y_squared: f32 = if current_node.0 <= end_node.0 {
+	let delta_y_squared: f32 = if current_node.1 <= end_node.1 {
 		(end_node.1 - current_node.1).pow(2) as f32
 	} else {
 		(current_node.1 - end_node.1).pow(2) as f32
