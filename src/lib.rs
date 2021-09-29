@@ -15,7 +15,7 @@
 //! NB: the `column` and `row` values can never be negative.
 //!
 //! ### Flat Topped - odd columns shifted up
-//! 
+//!
 //! ```txt
 //!              _______
 //!             /       \
@@ -74,7 +74,7 @@
 //!            \         /
 //!             \_______/
 //! ```
-
+//! 
 //! The column shift changes how we discover nearby nodes. For instance if we take the node at
 //! (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and
 //! `row` values by one.
@@ -104,12 +104,11 @@
 //! north-west = (column - 1, row)
 //! ```
 
-
 use ::std::collections::HashMap;
 use core::panic;
 
 /// Specifies the orientation of the hexagon space. This is important for determining the available neighbouring nodes during expansion.
-/// 
+///
 /// Flat-top odd columns moved up
 ///```txt
 ///       ___
@@ -151,11 +150,11 @@ pub enum HexOrientation {
 /// all directions. This library is akin to idea that you wake up in a 'hexagon world' and you can only move from
 /// the centre of one hexagon to another in a straight line, but while distance is static you'll find that as you
 /// cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
-/// 
+///
 /// `max_column` and `max_row` indicate the boundary of the hexagon space and are exclusive. For instance with a
 /// square grid space where the top most right node is positioned at (3, 3) our `max_column` and `max_row`
 /// will both equal `4`.
-/// 
+///
 /// `orientation` refers to your hexagonal grid layout.
 ///
 /// The return Vec contains a number of tuples which for `0..n` show the best path to take
@@ -199,20 +198,33 @@ pub fn astar_path(
 		);
 	}
 
-	let start_astar = a_star_score(nodes_weighted[&start_node].0, nodes_weighted[&start_node].1);
+	let start_weight: f32 = match nodes_weighted.get(&start_node) {
+		Some(x) => x.1,
+		None => panic!("Unable to find node weight")
+	};
+
+	// // every time we process a new node we add it to a map
+	// // if a node has already been recorded then we replace it if it has a better a-star score (smaller number)
+	// // otherwise we discard it
+	// let mut node_astar_scores: HashMap<(usize, usize), f32> = HashMap::new();
+	// // add starting node a-star score to data set (starting node score is just its weight)
+	// node_astar_scores.insert(start_node.clone(), start_weight.clone());
+
 	// create a queue of nodes to be processed based on discovery
 	// of form (current_node, a_star_score, vec_previous_nodes_traversed, total_complexity)
 	let mut queue = Vec::new();
 	// add starting node to queue
 	queue.push((
 		start_node.clone(),
-		start_astar,
+		start_weight, // we haven't moved so starting node score is just its weight
 		Vec::<(usize, usize)>::new(),
-		nodes_weighted[&start_node].0,
+		0.0,
 	));
 
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
 	while queue[0].0 != end_node {
+		// println!("QUEUE");
+		// println!("{:?}", queue);
 		// remove the first element ready for processing
 		let current_path = queue.swap_remove(0);
 		// expand the node in the current path
@@ -221,10 +233,21 @@ pub fn astar_path(
 		// process each new path
 		for n in available_nodes.iter() {
 			let previous_complexities: f32 = current_path.3.clone();
-			let target_node_complexity: f32 = nodes_weighted[&n].0.clone();
+			let current_node_complexity: f32 = match nodes_weighted.get(&current_path.0) {
+				Some(x) => x.0 * 0.5,
+				None => panic!("Unable to find node complexity")
+			};
+			let target_node_complexity: f32 = match nodes_weighted.get(&n) {
+				Some(x) => x.0 * 0.5,
+				None => panic!("Unable to find node complexity")
+			};
 			// calculate its fields
-			let complexity = previous_complexities + target_node_complexity;
-			let astar = a_star_score(complexity, nodes_weighted[&n].1);
+			let complexity = previous_complexities + target_node_complexity + current_node_complexity;
+			let target_weight: f32 = match nodes_weighted.get(&n) {
+				Some(x) => x.1,
+				None => panic!("Unable to find node complexity")
+			};
+			let astar = a_star_score(complexity, target_weight);
 			let mut previous_nodes_traversed = current_path.2.clone();
 			previous_nodes_traversed.push(current_path.0);
 			// search the queue to see if we already has a route to this node.
@@ -232,7 +255,7 @@ pub fn astar_path(
 			let mut no_record_of_node = true;
 			for mut q in queue.iter_mut() {
 				// target node alread has a path but it is less efficient, so replace it
-				if &q.0 == n && &q.1 > &astar {
+				if &q.0 == n && &q.1 >= &astar {
 					q.1 = astar;
 					q.2 = previous_nodes_traversed.clone();
 					q.3 = complexity;
@@ -244,6 +267,14 @@ pub fn astar_path(
 			if no_record_of_node {
 				queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
 			}
+			// // update the a-star data set
+			// if node_astar_scores.contains_key(&n) {
+			// 	if node_astar_scores.get(&n) >= Some(&astar) {
+			// 		node_astar_scores.insert(n.clone(), astar);
+			// 	}
+			// } else {
+			// 	node_astar_scores.insert(n.clone(), astar);
+			// }
 		}
 
 		// sort the queue by a-star sores so each loop processes the best
@@ -658,7 +689,7 @@ mod tests {
 	///   \    C:1    /           \    C:2    /
 	///    \_________/             \_________/
 	///  ```
-	fn astar_north() {
+	fn astar_up_right() {
 		let start_node: (usize, usize) = (0, 0);
 		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
 		nodes.insert((0, 0), 1.0);
@@ -724,7 +755,7 @@ mod tests {
 	///   \    C:1    /           \    C:2    /
 	///    \_________/             \_________/
 	///  ```
-	fn astar_south() {
+	fn astar_right_up() {
 		let start_node: (usize, usize) = (0, 0);
 		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
 		nodes.insert((0, 0), 1.0);
@@ -756,6 +787,204 @@ mod tests {
 			orientation,
 		);
 		let actual = vec![(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (3, 3)];
+		assert_eq!(actual, best);
+	}
+	#[test]
+	/// Calcualtes the best path from S (3, 3) to E (0, 0)
+	///```txt
+	///                 _________               _________
+	///                /         \             /         \
+	///               /           \           /     S     \
+	///     _________/    (1,3)    \_________/    (3,3)    \
+	///    /         \             /         \             /
+	///   /           \    C:2    /           \    C:2    /
+	///  /    (0,3)    \_________/    (2,3)    \_________/
+	///  \             /         \             /         \
+	///   \    C:3    /           \    C:9    /           \
+	///    \_________/    (1,2)    \_________/    (3,2)    \
+	///    /         \             /         \             /
+	///   /           \    C:4    /           \    C:5    /
+	///  /    (0,2)    \_________/    (2,2)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:8    /           \
+	///    \_________/    (1,1)    \_________/    (3,1)    \
+	///    /         \             /         \             /
+	///   /           \    C:9    /           \    C:4    /
+	///  /    (0,1)    \_________/    (2,1)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:6    /           \
+	///    \_________/    (1,0)    \_________/    (3,0)    \
+	///    /         \             /         \             /
+	///   /     E     \    C:2    /           \    C:3    /
+	///  /    (0,0)    \_________/    (2,0)    \_________/
+	///  \             /         \            /
+	///   \    C:1    /           \    C:2    /
+	///    \_________/             \_________/
+	///  ```
+	fn astar_down_left() {
+		let start_node: (usize, usize) = (3, 3);
+		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
+		nodes.insert((0, 0), 1.0);
+		nodes.insert((0, 1), 1.0);
+		nodes.insert((0, 2), 1.0);
+		nodes.insert((0, 3), 3.0);
+		nodes.insert((1, 0), 2.0);
+		nodes.insert((1, 1), 9.0);
+		nodes.insert((1, 2), 4.0);
+		nodes.insert((1, 3), 2.0);
+		nodes.insert((2, 0), 2.0);
+		nodes.insert((2, 1), 6.0);
+		nodes.insert((2, 2), 8.0);
+		nodes.insert((2, 3), 9.0);
+		nodes.insert((3, 0), 3.0);
+		nodes.insert((3, 1), 4.0);
+		nodes.insert((3, 2), 5.0);
+		nodes.insert((3, 3), 2.0);
+		let end_node: (usize, usize) = (0, 0);
+		let max_column = 4;
+		let max_row = 4;
+		let orientation = HexOrientation::FlatTopOddUp;
+		let best = astar_path(
+			start_node,
+			nodes,
+			end_node,
+			max_column,
+			max_row,
+			orientation,
+		);
+		let actual = vec![(3, 3), (3, 2), (3, 1), (2, 1), (1, 0), (0, 0)];
+		assert_eq!(actual, best);
+	}
+	#[test]
+	/// Calcualtes the best path from S to E
+	///```txt
+	///                 _________               _________
+	///                /         \             /         \
+	///               /           \           /     E     \
+	///     _________/    (1,3)    \_________/    (3,3)    \
+	///    /         \             /         \             /
+	///   /           \    C:2    /           \    C:2    /
+	///  /    (0,3)    \_________/    (2,3)    \_________/
+	///  \             /         \             /         \
+	///   \    C:3    /           \    C:4    /           \
+	///    \_________/    (1,2)    \_________/    (3,2)    \
+	///    /         \             /         \             /
+	///   /           \    C:2    /           \    C:5    /
+	///  /    (0,2)    \_________/    (2,2)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:8    /           \
+	///    \_________/    (1,1)    \_________/    (3,1)    \
+	///    /         \             /         \             /
+	///   /           \    C:9    /           \    C:9    /
+	///  /    (0,1)    \_________/    (2,1)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:6    /           \
+	///    \_________/    (1,0)    \_________/    (3,0)    \
+	///    /         \             /         \             /
+	///   /     S     \    C:2    /           \    C:3    /
+	///  /    (0,0)    \_________/    (2,0)    \_________/
+	///  \             /         \            /
+	///   \    C:1    /           \    C:6    /
+	///    \_________/             \_________/
+	///  ```
+	fn astar_left_down() {
+		let start_node: (usize, usize) = (3, 3);
+		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
+		nodes.insert((0, 0), 1.0);
+		nodes.insert((0, 1), 1.0);
+		nodes.insert((0, 2), 1.0);
+		nodes.insert((0, 3), 3.0);
+		nodes.insert((1, 0), 2.0);
+		nodes.insert((1, 1), 9.0);
+		nodes.insert((1, 2), 2.0);
+		nodes.insert((1, 3), 2.0);
+		nodes.insert((2, 0), 6.0);
+		nodes.insert((2, 1), 6.0);
+		nodes.insert((2, 2), 8.0);
+		nodes.insert((2, 3), 4.0);
+		nodes.insert((3, 0), 3.0);
+		nodes.insert((3, 1), 9.0);
+		nodes.insert((3, 2), 5.0);
+		nodes.insert((3, 3), 2.0);
+		let end_node: (usize, usize) = (0, 0);
+		let max_column = 4;
+		let max_row = 4;
+		let orientation = HexOrientation::FlatTopOddUp;
+		let best = astar_path(
+			start_node,
+			nodes,
+			end_node,
+			max_column,
+			max_row,
+			orientation,
+		);
+		let actual = vec![(3, 3), (2, 3), (1, 2), (0, 2), (0, 1), (0, 0)];
+		assert_eq!(actual, best);
+	}
+	#[test]
+	/// Calcualtes the best path from S to E
+	///```txt
+	///     _________               _________
+	///    /         \             /         \
+	///   /           \           /     E     \
+	///  /    (0,3)    \_________/    (2,3)    \_________
+	///  \             /         \             /         \
+	///   \    C:3    /           \    C:4    /           \
+	///    \_________/    (1,3)    \_________/    (3,3)    \
+	///    /         \             /         \             /
+	///   /           \    C:2    /           \    C:5    /
+	///  /    (0,2)    \_________/    (2,2)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:8    /           \
+	///    \_________/    (1,2)    \_________/    (3,2)    \
+	///    /         \             /         \             /
+	///   /           \    C:9    /           \    C:9    /
+	///  /    (0,1)    \_________/    (2,1)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:6    /           \
+	///    \_________/    (1,1)    \_________/    (3,1)    \
+	///    /         \             /         \             /
+	///   /     S     \    C:2    /           \    C:3    /
+	///  /    (0,0)    \_________/    (2,0)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:6    /           \
+	///    \_________/    (1,0)    \_________/    (3,0)    \
+	///              \             /         \             /
+	///               \    C:4    /           \    C:2    /
+	///                \_________/             \_________/
+	///  ```
+	fn astar_odd_column_down() {
+		let start_node: (usize, usize) = (0, 0);
+		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
+		nodes.insert((0, 0), 1.0);
+		nodes.insert((0, 1), 1.0);
+		nodes.insert((0, 2), 1.0);
+		nodes.insert((0, 3), 3.0);
+		nodes.insert((1, 0), 4.0);
+		nodes.insert((1, 1), 2.0);
+		nodes.insert((1, 2), 9.0);
+		nodes.insert((1, 3), 2.0);
+		nodes.insert((2, 0), 6.0);
+		nodes.insert((2, 1), 6.0);
+		nodes.insert((2, 2), 8.0);
+		nodes.insert((2, 3), 4.0);
+		nodes.insert((3, 0), 2.0);
+		nodes.insert((3, 1), 3.0);
+		nodes.insert((3, 2), 9.0);
+		nodes.insert((3, 3), 5.0);
+		let end_node: (usize, usize) = (2, 3);
+		let max_column = 4;
+		let max_row = 4;
+		let orientation = HexOrientation::FlatTopOddDown;
+		let best = astar_path(
+			start_node,
+			nodes,
+			end_node,
+			max_column,
+			max_row,
+			orientation,
+		);
+		let actual = vec![(0, 0), (0, 1), (0, 2), (1, 3), (2, 3)];
 		assert_eq!(actual, best);
 	}
 }
