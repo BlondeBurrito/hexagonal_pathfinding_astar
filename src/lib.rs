@@ -208,7 +208,7 @@ pub fn astar_path(
 		start_node.clone(),
 		start_astar,
 		Vec::<(usize, usize)>::new(),
-		0.5 * nodes_weighted[&start_node].0,
+		nodes_weighted[&start_node].0,
 	));
 
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
@@ -220,10 +220,10 @@ pub fn astar_path(
 			expand_neighrbor_nodes(current_path.0, &orientation, max_column, max_row);
 		// process each new path
 		for n in available_nodes.iter() {
-			let current_node_complexity: f32 = 0.5 *  &nodes_weighted[&current_path.0].0;
-			let target_node_complexity: f32 = 0.5 * nodes_weighted[&n].0;
+			let previous_complexities: f32 = current_path.3.clone();
+			let target_node_complexity: f32 = nodes_weighted[&n].0.clone();
 			// calculate its fields
-			let complexity = current_path.3 + target_node_complexity;
+			let complexity = previous_complexities + target_node_complexity;
 			let astar = a_star_score(complexity, nodes_weighted[&n].1);
 			let mut previous_nodes_traversed = current_path.2.clone();
 			previous_nodes_traversed.push(current_path.0);
@@ -658,7 +658,7 @@ mod tests {
 	///   \    C:1    /           \    C:2    /
 	///    \_________/             \_________/
 	///  ```
-	fn astar() {
+	fn astar_north() {
 		let start_node: (usize, usize) = (0, 0);
 		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
 		nodes.insert((0, 0), 1.0);
@@ -690,6 +690,72 @@ mod tests {
 			orientation,
 		);
 		let actual = vec![(0, 0), (0, 1), (0, 2), (1, 2), (2, 3), (3, 3)];
+		assert_eq!(actual, best);
+	}
+	#[test]
+	/// Calcualtes the best path from S to E
+	///```txt
+	///                 _________               _________
+	///                /         \             /         \
+	///               /           \           /     E     \
+	///     _________/    (1,3)    \_________/    (3,3)    \
+	///    /         \             /         \             /
+	///   /           \    C:2    /           \    C:2    /
+	///  /    (0,3)    \_________/    (2,3)    \_________/
+	///  \             /         \             /         \
+	///   \    C:3    /           \    C:9    /           \
+	///    \_________/    (1,2)    \_________/    (3,2)    \
+	///    /         \             /         \             /
+	///   /           \    C:4    /           \    C:5    /
+	///  /    (0,2)    \_________/    (2,2)    \_________/
+	///  \             /         \             /         \
+	///   \    C:1    /           \    C:8    /           \
+	///    \_________/    (1,1)    \_________/    (3,1)    \
+	///    /         \             /         \             /
+	///   /           \    C:9    /           \    C:4    /
+	///  /    (0,1)    \_________/    (2,1)    \_________/
+	///  \             /         \             /         \
+	///   \    C:6    /           \    C:6    /           \
+	///    \_________/    (1,0)    \_________/    (3,0)    \
+	///    /         \             /         \             /
+	///   /     S     \    C:2    /           \    C:3    /
+	///  /    (0,0)    \_________/    (2,0)    \_________/
+	///  \             /         \            /
+	///   \    C:1    /           \    C:2    /
+	///    \_________/             \_________/
+	///  ```
+	fn astar_south() {
+		let start_node: (usize, usize) = (0, 0);
+		let mut nodes: HashMap<(usize, usize), f32> = HashMap::new();
+		nodes.insert((0, 0), 1.0);
+		nodes.insert((0, 1), 6.0);
+		nodes.insert((0, 2), 1.0);
+		nodes.insert((0, 3), 3.0);
+		nodes.insert((1, 0), 2.0);
+		nodes.insert((1, 1), 9.0);
+		nodes.insert((1, 2), 4.0);
+		nodes.insert((1, 3), 2.0);
+		nodes.insert((2, 0), 2.0);
+		nodes.insert((2, 1), 6.0);
+		nodes.insert((2, 2), 8.0);
+		nodes.insert((2, 3), 9.0);
+		nodes.insert((3, 0), 3.0);
+		nodes.insert((3, 1), 4.0);
+		nodes.insert((3, 2), 5.0);
+		nodes.insert((3, 3), 2.0);
+		let end_node: (usize, usize) = (3, 3);
+		let max_column = 4;
+		let max_row = 4;
+		let orientation = HexOrientation::FlatTopOddUp;
+		let best = astar_path(
+			start_node,
+			nodes,
+			end_node,
+			max_column,
+			max_row,
+			orientation,
+		);
+		let actual = vec![(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (3, 3)];
 		assert_eq!(actual, best);
 	}
 }
