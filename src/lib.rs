@@ -252,19 +252,20 @@ pub fn astar_path(
 			previous_nodes_traversed.push(current_path.0);
 			// search the queue to see if we already has a route to this node.
 			// If we do but this new path is better then replace it, otherwise discard
-			let mut no_record_of_node = true;
+			let mut new_queue_item_required_for_node = true;
 			for mut q in queue.iter_mut() {
-				// target node alread has a path but it is less efficient, so replace it
-				if &q.0 == n && &q.1 >= &astar {
-					q.1 = astar;
-					q.2 = previous_nodes_traversed.clone();
-					q.3 = complexity;
-					no_record_of_node = false;
-				} else if &q.0 == n && &q.1 < &astar {
-					// we discard the new path as the queue already contains a better one
-				};
+				if &q.0 == n {
+					// node is in queue so don't create a new queue item later
+					new_queue_item_required_for_node = false;
+					// if existing score is worse then replace the queue item
+					if &q.1 > &astar {
+						q.1 = astar;
+						q.2 = previous_nodes_traversed.clone();
+						q.3 = complexity;
+					}
+				}
 			}
-			if no_record_of_node {
+			if new_queue_item_required_for_node {
 				queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
 			}
 			// // update the a-star data set
