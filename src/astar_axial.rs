@@ -1,9 +1,8 @@
-//! This module is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke
-//! collection of weighted hexagons in an Axial grid alignment. It's intended to calculate the most optimal path to a target
-//! hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
+//! A-Star pathfinding algorithm for an Axial grid alignment.
 //!
-//!
-//! Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 3 degrees making `r` horizontal and `q` diagonal.
+//! Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row.
+//! For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively
+//! just rotating the grid by 30 degrees making `r` horizontal and `q` diagonal.
 //!
 //!```txt
 //!             _______
@@ -21,16 +20,6 @@
 //!            \_______/
 //!```
 //!
-//!Finding a nodes neighbours in this alignment is rather simple, for a given node at `(q, r)` beginnning `north` and moving clockwise:
-//!
-//!```txt
-//! north      = (q, r - 1)
-//! north-east = (q + 1, r - 1)
-//! south-east = (q + 1, r)
-//! south      = (q, r + 1)
-//! south-west = (q - 1, r + 1)
-//! north-west = (q - 1, r)
-//!```
 
 use ::std::collections::HashMap;
 use core::panic;
@@ -43,39 +32,57 @@ use crate::helpers::node_neighbours_axial;
 /// The `nodes` input is structured such:
 ///
 /// * The keys are tuples of the nodes positions in the form (q,r)
-/// * The layout builds a square/rectangular or circular-like grid
-/// * The values are the complexity of traversing a particular node which is from the centre point of a side to its direct opposite
+/// * The layout builds a circular-like grid
+/// * The values are the complexity of traversing a particular node
 ///
-/// E.g
-/// ```txt
-///    ___________
-///   /     ^     \
-///  /      |      \
-/// /  C    |       \
-/// \       |       /
-///  \      ▼      /
-///   \___________/
-/// ```
-///
-/// For a grid of perfectly flush hexagons the distance from the centre to the midpoint of an edge is the same in
-/// all directions. This module is akin to idea that you wake up in a 'hexagon world' and you can only move from
-/// the centre of one hexagon to another in a straight line, but while distance is static you'll find that as you
-/// cross the boundary of one hexagon into another you'll suddenly be sprinting instead of slow-motion walking.
-///
-/// `min_column`, `max_column`, `min_row` and `max_row` indicate the boundary of the hexagon space and are exclusive.
-/// For instance with a circular grid space where the origin (bottom left edge) is `(-3, 3)` and the top most right
-/// node is positioned at (basically mirrored) `(3, 3) our `min_column` and `min_row` will be equal to `-4` and our
-/// `max_column` and `max_row` will both equal `4`.
+/// `count_rings` is the number of rings around the origin `(0, 0)` of the circular hexagonal grid. It
+/// is an inclusive value. NB: `count_rings` is NOT the nubmer of rings around the start or end node, it
+/// is explicitly the number of rings around the origin of our hexagon grid
+/// 
+/// For instance from our origin of `(0, 0)`:
+/// 
+///```txt
+///                              _________
+///                             /    0    \
+///                            /           \
+///                  _________/    Ring2    \_________
+///                 /   -1    \          -2 /    1    \
+///                /           \           /           \
+///      _________/    Ring2    \_________/    Ring2    \_________
+///     /   -2    \          -1 /    0    \          -2 /    2    \
+///    /           \           /           \           /           \
+///   /    Ring2    \_________/    Ring1    \_________/    Ring2    \
+///   \           0 /   -1    \          -1 /    1    \          -2 /
+///    \           /           \           /           \           /
+///     \_________/    Ring1    \_________/    Ring1    \_________/
+///     /   -2    \           0 /    0    \          -1 /    2    \
+///    /           \           /           \           /           \
+///   /    Ring2    \_________/             \_________/    Ring2    \
+///   \           1 /   -1    \           0 /    1    \          -1 /
+///    \           /           \           /           \           /
+///     \_________/    Ring1    \_________/    Ring1    \_________/
+///     /   -2    \           1 /    0    \           0 /    2    \
+///    /           \           /           \           /           \
+///   /    Ring2    \_________/    Ring1    \_________/    Ring2    \
+///   \           2 /   -1    \           1 /    1    \           0 /
+///    \           /           \           /           \           /
+///     \_________/    Ring2    \_________/    Ring2    \_________/
+///               \           2 /    0    \           1 /
+///                \           /           \           /
+///                 \_________/    Ring2    \_________/
+///                           \           2 /
+///                            \           /
+///                             \_________/
+///  ```
+/// 
+/// We have 2 rings of hexagons surrounding it.
 ///
 /// The return Vec contains a number of tuples which for `0..n` show the best path to take
 pub fn astar_path(
 	start_node: (i32, i32),
 	nodes: HashMap<(i32, i32), f32>,
 	end_node: (i32, i32),
-	min_column: i32,
-	max_column: i32,
-	min_row: i32,
-	max_row: i32,
+	count_rings: i32,
 ) -> Vec<(i32, i32)> {
 	// ensure nodes data contains start and end points
 	if !nodes.contains_key(&start_node) {
@@ -91,11 +98,13 @@ pub fn astar_path(
 		);
 	}
 	// ensure start and end nodes are within the max bounds of the grid
-	// max bounds are exclusive hence equal to or greater than
-	if start_node.0 >= max_column || start_node.0 <= min_column || start_node.1 >= max_row || start_node.1 <= min_row {
+	// we use the ring boundary hence it's easier to check this in cubic coords
+	let cubic_start = axial_to_cubic(start_node);
+	let cubic_end = axial_to_cubic(end_node);
+	if cubic_start.0.abs() > count_rings || cubic_start.1.abs() > count_rings || cubic_start.2.abs() > count_rings {
 		panic!("Start node is outside of searchable grid")
 	}
-	if end_node.0 >= max_column || end_node.0 <= min_column || end_node.1 >= max_row || end_node.1 <= min_row {
+	if cubic_end.0.abs() > count_rings || cubic_end.1.abs() > count_rings || cubic_end.2.abs() > count_rings {
 		panic!("End node is outside of searchable grid")
 	}
 	// calculate the weight of each node and produce a new combined data set of everthing we need
@@ -139,13 +148,11 @@ pub fn astar_path(
 
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
 	while queue[0].0 != end_node {
-		// println!("QUEUE");
-		// println!("{:?}", queue);
 		// remove the first element ready for processing
 		let current_path = queue.swap_remove(0);
 		// expand the node in the current path
 		let available_nodes =
-			node_neighbours_axial(current_path.0, min_column, max_column, min_row, max_row);
+			node_neighbours_axial(current_path.0, count_rings);
 		// process each new path
 		for n in available_nodes.iter() {
 			let previous_complexities: f32 = current_path.3.clone();
@@ -172,7 +179,7 @@ pub fn astar_path(
 				if node_astar_scores.get(&n) >= Some(&astar) {
 					// data set contains a worse score so update the set with the better score
 					node_astar_scores.insert(n.clone(), astar);
-					// search the queue to see if we already has a route to this node.
+					// search the queue to see if we already have a route to this node.
 					// If we do but this new path is better then replace it, otherwise discard
 					let mut new_queue_item_required_for_node = true;
 					for mut q in queue.iter_mut() {
@@ -323,20 +330,14 @@ mod tests {
 		nodes.insert((-2, 0), 1.0);
 		nodes.insert((-1, -1), 2.0);
 		let end_node: (i32, i32) = (2, -2);
-		let min_column = -3;
-		let max_column = 3;
-		let min_row = -3;
-		let max_row = 3;
+		let rings = 2;
 		let best = astar_path(
 			start_node,
 			nodes,
 			end_node,
-			min_column,
-			max_column,
-			min_row,
-			max_row,
+			rings,
 		);
-		let actual = vec![(0, 0), (0, 1), (0, 2), (1, 1), (2, 0), (2, -1), (2, -2)];
+		let actual = vec![(0, 0), (0, 1), (1, 1), (2, 0), (2, -1), (2, -2)];
 		assert_eq!(actual, best);
 	}
 }

@@ -1,6 +1,6 @@
 [package]
 name = "hexagonal_pathfinding_astar"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["BlondeBurrito"]
 edition = "2018"
 keywords = ["pathfinding", "astar", "a-star", "A*"]

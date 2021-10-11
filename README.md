@@ -33,8 +33,7 @@ I've created it as I'm currently building a game using the [Bevy](https://github
 
 Limitations:
 
-* Your hexagon grid can have no more than `usize::MAX -1` columns, otherwise it'll panic on overflow
-* Your hexagon grid can have no more than `usize::MAX -1` rows, otherwise it'll panic on overflow
+* Keep node positions smaller than `i32::MAX/2` and greater than `i32::MIN/2` otherwise bad things might happen
 
 Table of contents
 
@@ -46,9 +45,8 @@ Table of contents
     1. [Offset Coordinates](#offset)
         1. [Flat Topped - odd columns shifted up](#ftou)
         1. [Flat Topped - odd columns shifted down](#ftod)
-4. [How to use](#howto)
-5. [Example - Simple Complexities: A-Star for Flat Topped Odd Column Shifted Up Grid](#example1)
-6. [Example - Varying Complexity: A-Star for Flat Topped Odd Column Shifted Up](#example2)
+4. [What Coordinate System Should You Use?](#wcssyyu)
+5. [How to use](#howto)
 
 ## A-Star Super Simple in Brief <a name="simpleExplanation"></a>
 
@@ -115,7 +113,7 @@ There are different ways in which a hexagon grid can be portrayed which in turn 
 
 ### Axial Coordinates <a name="axial"></a>
 
-Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 3 degrees making `r` horizontal and `q` diagonal.
+Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 30 degrees making `r` horizontal and `q` diagonal.
 
 ```txt
              _______
@@ -144,21 +142,18 @@ south-west = (q - 1, r + 1)
 north-west = (q - 1, r)
 ```
 
-Programmatically these can be found with the public function where the grid has boundaries in space denoted by the min and max values:
+Programmatically these can be found with the public function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
 
 ```rust
 pub fn node_neighbours_axial(
     source: (i32, i32),
-    min_column: i32,
-    max_column: i32,
-    min_row: i32,
-    max_row: i32,
+    count_rings: i32,
 ) -> Vec<(i32, i32)> 
 ```
 
 ### Cubic Coordinates <a name="cubic"></a>
 
-You can represent a hexagon grid through three primary axes. We denote the axes `x`, `y` and `z`. The Cubic coordinate system is very useful as some calculations cannot be perofrmed through other coordinate systems (they don't contain enough data), fortunately there are means of converting other systems to Cubic to make calculations easy/possible.
+You can represent a hexagon grid through three primary axes. We denote the axes `x`, `y` and `z`. The Cubic coordinate system is very useful as some calculations cannot be performed through other coordinate systems (they don't contain enough data), fortunately there are means of converting other systems to Cubic to make calculations easy/possible.
 
 A Cubic grid is structured such:
 
@@ -189,24 +184,20 @@ south-west = (x - 1, y, z + 1)
 north-west = (x - 1, y + 1, z)
 ```
 
-Programmatically these can be found with the public function where the grid has boundaries in space denoted by the min and max values:
+Programmatically these can be found with the public function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
 
 ```rust
-pub fn node_neighbours_cubic(source: (i32, i32, i32),
-    min_x: i32,
-    max_x: i32,
-    min_y: i32,
-    max_y: i32,
-    min_z: i32,
-    max_z: i32,
+pub fn node_neighbours_cubic(
+    source: (i32, i32, i32),
+    count_rings: i32,
 ) -> Vec<(i32, i32, i32)>
 ```
 
 ### Offset Coordinates <a name="offset"></a>
 
-Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't considered these here).
+Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't tested these here).
 
-Each node has a label defining its position, known as `(column, row)`. NB: the `column` and `row` values can never be negative.
+Each node has a label defining its position, known as `(column, row)`.
 
 #### Flat Topped - odd columns shifted up <a name="ftou"></a>
 
@@ -322,6 +313,14 @@ pub fn node_neighbours_offset(
 
 Where `orientation` must be `HexOrientation::FlatTopOddDown`
 
+## What Coordinate System Should You Use? <a name="wcssyyu"></a>
+
+If you're building a square/rectangular grid I'd say the Offset layout is the easiest to begin working with, it is simply just columns and rows on an `x-y` like axes.
+
+If you're building a circular grid then Axial and Cubic are easily the best as their coordinate systems naturally fit a circular space.
+
+You could use Axial and Cubic for a square/rectangular grid by creating a very large circle and using extremely high complexity values to mark out hexagons in the four edges of the space however this is just a waste of memory to store and for complex pathfinding the algorithm may wate time probing a corner.
+
 ## How to use <a name="howto"></a>
 
 Offset exmaple.
@@ -330,7 +329,7 @@ Cargo.toml
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar", tag = "0.3.0" }
+hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar", tag = "0.4.0" }
 ```
 
 Part of `xyz.rs`

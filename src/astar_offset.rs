@@ -1,19 +1,10 @@
-//! This module is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke
-//! collection of weighted hexagons in an Offset grid alignment. It's intended to calculate the most optimal path to a target
-//! hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
-//!
-//! The calculations are dpendent on the layout of your hexagon grid.
+//! A-Star pathfinding algorithm for an Offset grid alignment.
 //!
 //! ## Hexagon Layout/Orientation
 //!
-//! There are different ways in which a hexagon grid can be portrayed which in turn affects the
-//! discoverable neighbouring hexagons for path traversal. This library assumes that all hexagons have
-//! been plotted across a plane where the origin points sits at the bottom left - a deviation from this
-//! and the calcualtion simply won't work. Additionally a hexagon is herbey referred to as a 'node'.
+//! Each node has a label defining its position, known as `(column, row)`. The A-Star calculation requires an `orientation` parameter which specifies what type of Offset layout you are using, these are found in the enum `HexOrientation`.
 //!
-//! Each node has a label defining its position, known as `(column, row)`.
-//!
-//! ### Flat Topped - odd columns shifted up
+//! ### Flat Topped - odd columns shifted up `HexOrientation::FlatTopOddUp`
 //!
 //! ```txt
 //!              _______
@@ -29,36 +20,7 @@
 //!    \_______/         \_______/
 //! ```
 //!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at
-//! (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the `column` value by one.
-//!
-//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have
-//! to increment both the `column` value and the `row` value. I.e the calculation changes depending
-//!  on whether the odd column has been shifted up or down.
-//!
-//! In full for a node in an even column we can calculate a nodes neighbours thus:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row)
-//! south-east = (column + 1, row - 1)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row - 1)
-//! north-west = (column - 1, row)
-//! ```
-//!
-//! And for a node in an odd column the node neighbours can be found:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row + 1)
-//! south-east = (column + 1, row)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row)
-//! north-west = (column - 1, row + 1)
-//! ```
-//!
-//! ### Flat Topped - odd columns shifted down
+//! ### Flat Topped - odd columns shifted down `HexOrientation::FlatTopOddDown`
 //!
 //! ```txt
 //!     _______           _______
@@ -74,34 +36,6 @@
 //!             \_______/
 //! ```
 //!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at
-//! (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and
-//! `row` values by one.
-//!
-//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to
-//! only increment the `column` value by one.
-//!
-//! In full for a node in an even column we can calculate a nodes neighbours thus:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row + 1)
-//! south-east = (column + 1, row)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row)
-//! north-west = (column - 1, row + 1)
-//! ```
-//!
-//! And for a node in an odd column the node neighbours can be found:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row)
-//! south-east = (column + 1, row - 1)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row - 1)
-//! north-west = (column - 1, row)
-//! ```
 
 use ::std::collections::HashMap;
 use core::panic;
@@ -114,20 +48,9 @@ use crate::HexOrientation;
 ///
 /// The `nodes` input is structured such:
 ///
-/// * The keys are tuples of the nodes position in a grid with the origin being based on the bottom left, (x,y)
+/// * The keys are tuples of the nodes position in a grid with the origin being based on the bottom left, `(x,y)`
 /// * The layout builds a square/rectangular like grid space
-/// * The values are the complexity of traversing a particular node which is from the centre point of a side to its direct opposite
-///
-/// E.g
-/// ```txt
-///    ___________
-///   /     ^     \
-///  /      |      \
-/// /  C    |       \
-/// \       |       /
-///  \      ▼      /
-///   \___________/
-/// ```
+/// * The values are the complexity of traversing a particular node
 ///
 /// For a grid of perfectly flush hexagons the distance from the centre to the midpoint of an edge is the same in
 /// all directions. This module is akin to idea that you wake up in a 'hexagon world' and you can only move from
@@ -136,7 +59,40 @@ use crate::HexOrientation;
 ///
 /// `min_column`, `max_column`, `min_row` and `max_row` indicate the boundary of the hexagon space and are exclusive.
 /// For instance with a square grid space where the origin (bottom left) is `(0, 0)` and the top most right node is positioned at
-/// `(3, 3) our `min_column` and `min_row` will be equal to `-1` and our `max_column` and `max_row` will both equal `4`.
+/// `(3, 3)`:
+/// 
+///```txt
+///                 _________               _________
+///                /         \             /         \
+///               /           \           /           \
+///     _________/    (1,3)    \_________/    (3,3)    \
+///    /         \             /         \             /
+///   /           \           /           \           /
+///  /    (0,3)    \_________/    (2,3)    \_________/
+///  \             /         \             /         \
+///   \           /           \           /           \
+///    \_________/    (1,2)    \_________/    (3,2)    \
+///    /         \             /         \             /
+///   /           \    C:4    /           \           /
+///  /    (0,2)    \_________/    (2,2)    \_________/
+///  \             /         \             /         \
+///   \           /           \           /           \
+///    \_________/    (1,1)    \_________/    (3,1)    \
+///    /         \             /         \             /
+///   /           \           /           \           /
+///  /    (0,1)    \_________/    (2,1)    \_________/
+///  \             /         \             /         \
+///   \           /           \           /           \
+///    \_________/    (1,0)    \_________/    (3,0)    \
+///    /         \             /         \             /
+///   /           \           /           \           /
+///  /    (0,0)    \_________/    (2,0)    \_________/
+///  \             /         \            /
+///   \           /           \           /
+///    \_________/             \_________/
+///  ```
+/// 
+/// Our `min_column` and `min_row` will be equal to `-1` and our `max_column` and `max_row` will both equal `4`.
 ///
 /// `orientation` refers to your hexagonal grid layout.
 ///
@@ -246,7 +202,7 @@ pub fn astar_path(
 				if node_astar_scores.get(&n) >= Some(&astar) {
 					// data set contains a worse score so update the set with the better score
 					node_astar_scores.insert(n.clone(), astar);
-					// search the queue to see if we already has a route to this node.
+					// search the queue to see if we already have a route to this node.
 					// If we do but this new path is better then replace it, otherwise discard
 					let mut new_queue_item_required_for_node = true;
 					for mut q in queue.iter_mut() {

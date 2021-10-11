@@ -2,19 +2,74 @@
 //! collection of weighted hexagons. It's intended to calculate the most optimal path to a target
 //! hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
 //!
-//! The calculations are dpendent on the layout of your hexagon grid.
+//! The calculations are dpendent on the layout of your hexagon grid (coordinate system) and each hexagon has an associated complexity of traversing a particular node.
 //!
-//! ## Hexagon Layout/Orientation
+//! E.g
+//! ```txt
+//!    ___________
+//!   /     ^     \
+//!  /      |      \
+//! /  C    |       \
+//! \       |       /
+//!  \      ▼      /
+//!   \___________/
+//! ```
+//! 
+//! Which influences the calculation to find the best path.
 //!
-//! There are different ways in which a hexagon grid can be portrayed which in turn affects the
-//! discoverable neighbouring hexagons for path traversal. This library assumes that all hexagons have
-//! been plotted across a plane where the origin points sits at the bottom left - a deviation from this
-//! and the calcualtion simply won't work. Additionally a hexagon is herbey referred to as a 'node'.
+//! ## Hexagon Grids and  Orientation
+//!
+//! There are different ways in which a hexagon grid can be portrayed which in turn affects the discoverable neighbouring hexagons for path traversal.
+//!
+//! ### Axial Coordinates
+//!
+//! Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 30 degrees making `r` horizontal and `q` diagonal.
+//!
+//! ```txt
+//!              _______
+//!             /   0   \
+//!     _______/         \_______
+//!    /  -1   \      -1 /   1   \
+//!   /         \_______/         \
+//!   \       0 /   q   \      -1 /
+//!    \_______/         \_______/
+//!    /  -1   \       r /   1   \
+//!   /         \_______/         \
+//!   \       1 /   0   \       0 /
+//!    \_______/         \_______/
+//!            \       1 /
+//!             \_______/
+//! ```
+//!
+//! ### Cubic Coordinates
+//!
+//! You can represent a hexagon grid through three primary axes. We denote the axes `x`, `y` and `z`. The Cubic coordinate system is very useful as some calculations cannot be performed through other coordinate systems (they don't contain enough data), fortunately there are means of converting other systems to Cubic to make calculations easy/possible.
+//!
+//! A Cubic grid is structured such:
+//!
+//! ```txt
+//!              _______
+//!             /   0   \
+//!     _______/         \_______
+//!    /  -1   \ 1    -1 /   1   \
+//!   /         \_______/         \
+//!   \ 1     0 /   x   \ 0    -1 /
+//!    \_______/         \_______/
+//!    /  -1   \ y     z /   1   \
+//!   /         \_______/         \
+//!   \ 0     1 /   0   \ -1    0 /
+//!    \_______/         \_______/
+//!            \ -1    1 /
+//!             \_______/
+//! ```
+//!
+//! ### Offset Coordinates
+//!
+//! Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't tested these here).
 //!
 //! Each node has a label defining its position, known as `(column, row)`.
-//! NB: the `column` and `row` values can never be negative.
 //!
-//! ### Flat Topped - odd columns shifted up
+//! #### Flat Topped - odd columns shifted up
 //!
 //! ```txt
 //!              _______
@@ -30,36 +85,7 @@
 //!    \_______/         \_______/
 //! ```
 //!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at
-//! (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the `column` value by one.
-//!
-//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have
-//! to increment both the `column` value and the `row` value. I.e the calculation changes depending
-//!  on whether the odd column has been shifted up or down.
-//!
-//! In full for a node in an even column we can calculate a nodes neighbours thus:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row)
-//! south-east = (column + 1, row - 1)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row - 1)
-//! north-west = (column - 1, row)
-//! ```
-//!
-//! And for a node in an odd column the node neighbours can be found:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row + 1)
-//! south-east = (column + 1, row)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row)
-//! north-west = (column - 1, row + 1)
-//! ```
-//!
-//! ### Flat Topped - odd columns shifted down
+//! #### Flat Topped - odd columns shifted down
 //!
 //! ```txt
 //!     _______           _______
@@ -73,35 +99,6 @@
 //!    \_______/  (1,0)  \_______/
 //!            \         /
 //!             \_______/
-//! ```
-//!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at
-//! (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and
-//! `row` values by one.
-//!
-//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to
-//! only increment the `column` value by one.
-//!
-//! In full for a node in an even column we can calculate a nodes neighbours thus:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row + 1)
-//! south-east = (column + 1, row)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row)
-//! north-west = (column - 1, row + 1)
-//! ```
-//!
-//! And for a node in an odd column the node neighbours can be found:
-//!
-//! ```txt
-//! north      = (column, row + 1)
-//! north-east = (column + 1, row)
-//! south-east = (column + 1, row - 1)
-//! south      = (column, row -1)
-//! south-west = (column - 1, row - 1)
-//! north-west = (column - 1, row)
 //! ```
 //!
 pub mod helpers;

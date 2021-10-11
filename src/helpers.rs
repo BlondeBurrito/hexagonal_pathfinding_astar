@@ -1,9 +1,169 @@
 //! A collection of functions to convert between coordinates systems, finding neighboring
 //! hexagons, finding distance between hexagons and others
+//! 
+//! ## Axial Coordinates <a name="axial"></a>
+//!
+//! For the given Axial grid:
+//!
+//! ```txt
+//!              _______
+//!             /   0   \
+//!     _______/         \_______
+//!    /  -1   \      -1 /   1   \
+//!   /         \_______/         \
+//!   \       0 /   q   \      -1 /
+//!    \_______/         \_______/
+//!    /  -1   \       r /   1   \
+//!   /         \_______/         \
+//!   \       1 /   0   \       0 /
+//!    \_______/         \_______/
+//!            \       1 /
+//!             \_______/
+//! ```
+//!
+//! Finding a nodes neighbours in this alignment is rather simple, for a given node at `(q, r)` beginnning `north` and moving clockwise:
+//!
+//! ```txt
+//! north      = (q, r - 1)
+//! north-east = (q + 1, r - 1)
+//! south-east = (q + 1, r)
+//! south      = (q, r + 1)
+//! south-west = (q - 1, r + 1)
+//! north-west = (q - 1, r)
+//! ```
+//!
+//! Programmatically these can be found with the helper function `node_neighbours_axial()`.
+//! 
+//! ## Cubic Coordinates <a name="cubic"></a>
+//!
+//! A Cubic grid is structured such:
+//!
+//! ```txt
+//!              _______
+//!             /   0   \
+//!     _______/         \_______
+//!    /  -1   \ 1    -1 /   1   \
+//!   /         \_______/         \
+//!   \ 1     0 /   x   \ 0    -1 /
+//!    \_______/         \_______/
+//!    /  -1   \ y     z /   1   \
+//!   /         \_______/         \
+//!   \ 0     1 /   0   \ -1    0 /
+//!    \_______/         \_______/
+//!            \ -1    1 /
+//!             \_______/
+//! ```
+//!
+//!To find a nodes neighbours from `(x, y, z)` starting `north` and moving clockwise:
+//!
+//! ```txt
+//! north      = (x, y + 1, z - 1)
+//! north-east = (x + 1, y, z - 1)
+//! south-east = (x + 1, y - 1, z)
+//! south      = (x, y - 1, z + 1)
+//! south-west = (x - 1, y, z + 1)
+//! north-west = (x - 1, y + 1, z)
+//! ```
+//!
+//! Programmatically these can be found with the public helper function `node_neighbours_cubic()`.
+//! 
+//! ## Offset Coordinates
+//!
+//! Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't tested these here).
+//!
+//! Each node has a label defining its position, known as `(column, row)`.
+//!
+//! ### Flat Topped - odd columns shifted up
+//!
+//! ```txt
+//!              _______
+//!             /       \
+//!     _______/  (1,1)  \_______
+//!    /       \         /       \
+//!   /  (0,1)  \_______/  (2,1)  \
+//!   \         /       \         /
+//!    \_______/  (1,0)  \_______/
+//!    /       \         /       \
+//!   /  (0,0)  \_______/  (2,0)  \
+//!   \         /       \         /
+//!    \_______/         \_______/
+//! ```
+//!
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the `column` value by one.
+//!
+//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have to increment both the `column` value and the `row` value. I.e the calculation changes depending on whether the odd column has been shifted up or down.
+//!
+//! In full for a node in an even column we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row - 1)
+//! north-west = (column - 1, row)
+//! ```
+//!
+//! And for a node in an odd column the node neighbours can be found:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row + 1)
+//! south-east = (column + 1, row)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
+//!
+//! Programmatically these can be found with the public helper function `node_neighbours_offset()` where the grid has boundaries in space denoted by the min and max values and`orientation` must be `HexOrientation::FlatTopOddUp`
+//!
+//! ### Flat Topped - odd columns shifted down
+//!
+//! ```txt
+//!     _______           _______
+//!    /       \         /       \
+//!   /  (0,1)  \_______/  (2,1)  \
+//!   \         /       \         /
+//!    \_______/  (1,1)  \_______/
+//!    /       \         /       \
+//!   /  (0,0)  \_______/  (2,0)  \
+//!   \         /       \         /
+//!    \_______/  (1,0)  \_______/
+//!            \         /
+//!             \_______/
+//! ```
+//!
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and `row` values by one.
+//!
+//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to only increment the `column` value by one.
+//!
+//! In full for a node in an even column we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row + 1)
+//! south-east = (column + 1, row)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
+//!
+//!And for a node in an odd column the node neighbours can be found:
+//!
+//! ```txt
+//! north      = (column, row + 1)
+//! north-east = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south      = (column, row -1)
+//! south-west = (column - 1, row - 1)
+//! north-west = (column - 1, row)
+//! ```
+//! 
+//! Programmatically these can be found with the public helper function `node_neighbours_offset()` where the grid has boundaries in space denoted by the min and max values and`orientation` must be `HexOrientation::FlatTopOddDown`
 
 use crate::HexOrientation;
 
-/// Converts Offset coordinates (based on an orinetation) to Cubic coordinates
+/// Converts Offset coordinates (based on an orientation) to Cubic coordinates
 pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) -> (i32, i32, i32) {
 	match orientation {
 		HexOrientation::FlatTopOddUp => {
@@ -29,16 +189,18 @@ pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	return (x, y, z)
 }
 /// Convert a node with Cubic coordinates to Axial coordinates. `node_coords` is of the form
-/// (x, y, z).
+/// `(x, y, z)`.
 pub fn cubic_to_axial(node_coords: (i32, i32, i32)) -> (i32, i32) {
 	let q = node_coords.0;
 	let r = node_coords.2;
 	return (q, r)
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
-///  where `max_column` and `max_row` inputs define the outer boundary of the grid space, note they
+///  where 1min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
 /// are exclusive values. This means that for most source hexagons 6 neighbours will be expanded but
-/// for those lining the boundaries fewer neighrbors will be discovered. Consider:
+/// for those lining the boundaries fewer neighrbors will be discovered.
+/// 
+/// Consider:
 /// ```txt
 ///       ___
 ///   ___/   \___
@@ -186,76 +348,90 @@ pub fn node_neighbours_offset(
 	}
 }
 /// Finds the neighboring nodes in an Cubic coordinate system. `source` is of the form
-/// `(x, y, z). The nodes grid is bound by `min` and `max` `x`, `y` and `z` values to
-/// denote the edges of the node space and they are exclusive
-pub fn node_neighbours_cubic(source: (i32, i32, i32),
-	min_x: i32,
-	max_x: i32,
-	min_y: i32,
-	max_y: i32,
-	min_z: i32,
-	max_z: i32,
+/// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
+/// the number of rings around the origin of the grid - the value is inclusive.
+/// 
+/// For instance:
+/// ```txt
+///              _______
+///             /   0   \
+///     _______/         \_______
+///    /  -1   \ 1    -1 /   1   \
+///   /         \_______/         \
+///   \ 1     0 /   x   \ 0    -1 /
+///    \_______/         \_______/
+///    /  -1   \ y     z /   1   \
+///   /         \_______/         \
+///   \ 0     1 /   0   \ -1    0 /
+///    \_______/         \_______/
+///            \ -1    1 /
+///             \_______/
+/// ```
+/// Will have a `count_rings_from_origin` of 1.
+pub fn node_neighbours_cubic(
+	source: (i32, i32, i32),
+	count_rings_from_origin: i32,
 ) -> Vec<(i32, i32, i32)> {
 	let mut neighbours = Vec::new();
 	// north (x, y + 1, z - 1)
-	if source.1 + 1 < max_y && source.2 -1 > min_z {
+	if source.1 + 1 <= count_rings_from_origin && (source.2 -1).abs() <= count_rings_from_origin {
 		neighbours.push((source.0, source.1 + 1, source.2 -1))
 	}
 	// north-east (x + 1, y, z - 1)
-	if source.0 + 1 < max_x && source.2 -1 > min_z {
+	if source.0 + 1 <= count_rings_from_origin && (source.2 -1).abs() <= count_rings_from_origin {
 		neighbours.push((source.0 + 1, source.1, source.2 -1))
 	}
 	// south-east (x + 1, y - 1, z)
-	if source.0 + 1 < max_x && source.1 -1 > min_y{
+	if source.0 + 1 <= count_rings_from_origin && (source.1 -1).abs() <= count_rings_from_origin {
 		neighbours.push((source.0 + 1, source.1 -1, source.2))
 	}
 	// south (x, y - 1, z + 1)
-	if source.1 - 1 > min_y && source.2 + 1 < max_z {
+	if (source.1 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
 		neighbours.push((source.0, source.1 - 1, source.2 + 1))
 	}
 	// south-west (x - 1, y, z + 1)
-	if source.0 - 1 > min_x && source.2 + 1 < max_z {
+	if (source.0 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
 		neighbours.push((source.0 -1, source.1, source.2 + 1))
 	}
 	// north-west (x - 1, y + 1, z)
-	if source.0 -1 > min_x && source.1 + 1 < max_y {
+	if (source.0 -1).abs() <= count_rings_from_origin && source.1 + 1 <= count_rings_from_origin {
 		neighbours.push((source.0 -1, source.1 + 1, source.2))
 	}
 	return neighbours
 
 }
 /// Finds the neighboring nodes in an Axial coordinate system. `source` is of the form
-/// `(q, r)` where `q` is the column and `r` the row. The nodes grid is in a circular arrangment
-/// around some origin, the `count_rings_from_origin` is exclusive and is used to determine if a neighbour
-/// lives outside the searchable grid and is thus ignored
+/// `(q, r)` where `q` is the column and `r` the row. The node grid is in a circular arrangment
+/// around some origin, the `count_rings_from_origin` is inclusive and is used to determine if a neighbour
+/// lives outside the searchable grid and is thus ignored.
+/// 
+/// For instance:
+/// ```txt
+///              _______
+///             /   0   \
+///     _______/         \_______
+///    /  -1   \      -1 /   1   \
+///   /         \_______/         \
+///   \       0 /   q   \      -1 /
+///    \_______/         \_______/
+///    /  -1   \       r /   1   \
+///   /         \_______/         \
+///   \       1 /   0   \       0 /
+///    \_______/         \_______/
+///            \       1 /
+///             \_______/
+/// ```
+/// Only has 1 ring of nodes around the origin so the count is 1.
 pub fn node_neighbours_axial(
 	source: (i32, i32),
 	count_rings_from_origin: i32,
 ) -> Vec<(i32, i32)> {
 	let mut neighbours = Vec::new();
-	// north
-	if (source.0 + source.1).abs() < count_rings_from_origin {
-		neighbours.push((source.0, source.1 - 1))
-	}
-	// north-east
-	if source.0 + 1 < max_column && source.1 -1 > min_row {
-		neighbours.push((source.0 + 1, source.1 - 1))
-	}
-	// south-east
-	if source.0 + 1 < max_column {
-		neighbours.push((source.0 + 1, source.1))
-	}
-	// south
-	if source.1 + 1 < max_row {
-		neighbours.push((source.0, source.1 + 1))
-	}
-	// south-west
-	if source.0 - 1 > min_column && source.1 + 1 < max_row {
-		neighbours.push((source.0 - 1, source.1 + 1))
-	}
-	// north-west
-	if source.0 - 1 > min_column {
-		neighbours.push((source.0 -1, source.1))
+	// finding neighbours is a billion times easier in cubic coords
+	let cubic = axial_to_cubic(source);
+	let n = node_neighbours_cubic(cubic, count_rings_from_origin);
+	for i in n.iter() {
+		neighbours.push(cubic_to_axial(i.clone()))
 	}
 	return neighbours
 }
@@ -449,15 +625,15 @@ mod tests {
 	/// finds a nodes neighbours in axial space
 	fn axial_neighbours() {
 		let source: (i32, i32) = (2, -1);
-		let neighbours = node_neighbours_axial(source, -3, 5, -3, 5);
+		let neighbours = node_neighbours_axial(source, 3);
 		let actual = vec![(2, -2), (3, -2), (3, -1), (2, 0), (1, 0), (1, -1)];
 		assert_eq!(actual, neighbours);
 	}
 	#[test]
-	/// finds a nodes neighbours in axial space
+	/// finds a nodes neighbours in axial space against a boundary
 	fn axial_neighbours_with_boundary() {
 		let source: (i32, i32) = (-1, -1);
-		let neighbours = node_neighbours_axial(source, -3, 5, -3, 5);
+		let neighbours = node_neighbours_axial(source, 2);
 		let actual = vec![(0, -2), (0, -1), (-1, 0), (-2, 0)];
 		assert_eq!(actual, neighbours);
 	}
@@ -465,8 +641,16 @@ mod tests {
 	/// finds a nodes neighbours in cubic space
 	fn cubic_neighbours() {
 		let source: (i32, i32, i32) = (2, -1, -1);
-		let neighbours = node_neighbours_cubic(source, 0, 4, -3, 1, -3, 1);
+		let neighbours = node_neighbours_cubic(source, 3);
 		let actual = vec![(2, 0, -2), (3, -1, -2), (3, -2, -1), (2, -2, 0), (1, -1, 0), (1, 0, -1)];
+		assert_eq!(actual, neighbours);
+	}
+	#[test]
+	/// finds a nodes neighbours in cubic space where it is up against a boundary
+	fn cubic_neighbours_with_boundary() {
+		let source: (i32, i32, i32) = (2, -1, -1);
+		let neighbours = node_neighbours_cubic(source, 2);
+		let actual = vec![(2, 0, -2), (2, -2, 0), (1, -1, 0), (1, 0, -1)];
 		assert_eq!(actual, neighbours);
 	}
 }
