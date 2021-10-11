@@ -1,6 +1,6 @@
 //! A collection of functions to convert between coordinates systems, finding neighboring
 //! hexagons, finding distance between hexagons and others
-//! 
+//!
 //! ## Axial Coordinates <a name="axial"></a>
 //!
 //! For the given Axial grid:
@@ -33,7 +33,7 @@
 //! ```
 //!
 //! Programmatically these can be found with the helper function `node_neighbours_axial()`.
-//! 
+//!
 //! ## Cubic Coordinates <a name="cubic"></a>
 //!
 //! A Cubic grid is structured such:
@@ -66,7 +66,7 @@
 //! ```
 //!
 //! Programmatically these can be found with the public helper function `node_neighbours_cubic()`.
-//! 
+//!
 //! ## Offset Coordinates
 //!
 //! Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't tested these here).
@@ -158,7 +158,7 @@
 //! south-west = (column - 1, row - 1)
 //! north-west = (column - 1, row)
 //! ```
-//! 
+//!
 //! Programmatically these can be found with the public helper function `node_neighbours_offset()` where the grid has boundaries in space denoted by the min and max values and`orientation` must be `HexOrientation::FlatTopOddDown`
 
 use crate::HexOrientation;
@@ -185,21 +185,21 @@ pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) ->
 pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	let x = node_coords.0;
 	let z = node_coords.1;
-	let y =  -z-x;
-	return (x, y, z)
+	let y = -z - x;
+	return (x, y, z);
 }
 /// Convert a node with Cubic coordinates to Axial coordinates. `node_coords` is of the form
 /// `(x, y, z)`.
 pub fn cubic_to_axial(node_coords: (i32, i32, i32)) -> (i32, i32) {
 	let q = node_coords.0;
 	let r = node_coords.2;
-	return (q, r)
+	return (q, r);
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
 ///  where 1min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
 /// are exclusive values. This means that for most source hexagons 6 neighbours will be expanded but
 /// for those lining the boundaries fewer neighrbors will be discovered.
-/// 
+///
 /// Consider:
 /// ```txt
 ///       ___
@@ -350,7 +350,7 @@ pub fn node_neighbours_offset(
 /// Finds the neighboring nodes in an Cubic coordinate system. `source` is of the form
 /// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
 /// the number of rings around the origin of the grid - the value is inclusive.
-/// 
+///
 /// For instance:
 /// ```txt
 ///              _______
@@ -374,16 +374,16 @@ pub fn node_neighbours_cubic(
 ) -> Vec<(i32, i32, i32)> {
 	let mut neighbours = Vec::new();
 	// north (x, y + 1, z - 1)
-	if source.1 + 1 <= count_rings_from_origin && (source.2 -1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0, source.1 + 1, source.2 -1))
+	if source.1 + 1 <= count_rings_from_origin && (source.2 - 1).abs() <= count_rings_from_origin {
+		neighbours.push((source.0, source.1 + 1, source.2 - 1))
 	}
 	// north-east (x + 1, y, z - 1)
-	if source.0 + 1 <= count_rings_from_origin && (source.2 -1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0 + 1, source.1, source.2 -1))
+	if source.0 + 1 <= count_rings_from_origin && (source.2 - 1).abs() <= count_rings_from_origin {
+		neighbours.push((source.0 + 1, source.1, source.2 - 1))
 	}
 	// south-east (x + 1, y - 1, z)
-	if source.0 + 1 <= count_rings_from_origin && (source.1 -1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0 + 1, source.1 -1, source.2))
+	if source.0 + 1 <= count_rings_from_origin && (source.1 - 1).abs() <= count_rings_from_origin {
+		neighbours.push((source.0 + 1, source.1 - 1, source.2))
 	}
 	// south (x, y - 1, z + 1)
 	if (source.1 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
@@ -391,20 +391,19 @@ pub fn node_neighbours_cubic(
 	}
 	// south-west (x - 1, y, z + 1)
 	if (source.0 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
-		neighbours.push((source.0 -1, source.1, source.2 + 1))
+		neighbours.push((source.0 - 1, source.1, source.2 + 1))
 	}
 	// north-west (x - 1, y + 1, z)
-	if (source.0 -1).abs() <= count_rings_from_origin && source.1 + 1 <= count_rings_from_origin {
-		neighbours.push((source.0 -1, source.1 + 1, source.2))
+	if (source.0 - 1).abs() <= count_rings_from_origin && source.1 + 1 <= count_rings_from_origin {
+		neighbours.push((source.0 - 1, source.1 + 1, source.2))
 	}
-	return neighbours
-
+	return neighbours;
 }
 /// Finds the neighboring nodes in an Axial coordinate system. `source` is of the form
 /// `(q, r)` where `q` is the column and `r` the row. The node grid is in a circular arrangment
 /// around some origin, the `count_rings_from_origin` is inclusive and is used to determine if a neighbour
 /// lives outside the searchable grid and is thus ignored.
-/// 
+///
 /// For instance:
 /// ```txt
 ///              _______
@@ -422,10 +421,7 @@ pub fn node_neighbours_cubic(
 ///             \_______/
 /// ```
 /// Only has 1 ring of nodes around the origin so the count is 1.
-pub fn node_neighbours_axial(
-	source: (i32, i32),
-	count_rings_from_origin: i32,
-) -> Vec<(i32, i32)> {
+pub fn node_neighbours_axial(source: (i32, i32), count_rings_from_origin: i32) -> Vec<(i32, i32)> {
 	let mut neighbours = Vec::new();
 	// finding neighbours is a billion times easier in cubic coords
 	let cubic = axial_to_cubic(source);
@@ -433,7 +429,7 @@ pub fn node_neighbours_axial(
 	for i in n.iter() {
 		neighbours.push(cubic_to_axial(i.clone()))
 	}
-	return neighbours
+	return neighbours;
 }
 
 /// The distance between two nodes by using cubic coordinates
@@ -469,7 +465,14 @@ mod tests {
 		let max_column = 4;
 		let min_row = -1;
 		let max_row = 4;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let actual = vec![(2, 3), (3, 2), (3, 1), (2, 1), (1, 1), (1, 2)];
 		assert_eq!(actual, neighbours);
 	}
@@ -497,7 +500,14 @@ mod tests {
 		let max_column = 5;
 		let min_row = -1;
 		let max_row = 5;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let actual = vec![(3, 3), (4, 3), (4, 2), (3, 1), (2, 2), (2, 3)];
 		assert_eq!(actual, neighbours);
 	}
@@ -525,7 +535,14 @@ mod tests {
 		let max_column = 4;
 		let min_row = -1;
 		let max_row = 4;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let actual = vec![(2, 3), (3, 3), (3, 2), (2, 1), (1, 2), (1, 3)];
 		assert_eq!(actual, neighbours);
 	}
@@ -553,7 +570,14 @@ mod tests {
 		let max_column = 5;
 		let min_row = -1;
 		let max_row = 5;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let actual = vec![(3, 3), (4, 2), (4, 1), (3, 1), (2, 1), (2, 2)];
 		assert_eq!(actual, neighbours);
 	}
@@ -577,7 +601,14 @@ mod tests {
 		let max_column = 5;
 		let min_row = -1;
 		let max_row = 5;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let expected_neighbour_count = 2;
 		assert_eq!(expected_neighbour_count, neighbours.len());
 	}
@@ -603,7 +634,14 @@ mod tests {
 		let max_column = 3;
 		let min_row = -1;
 		let max_row = 2;
-		let neighbours = node_neighbours_offset(source, &orientation, min_column, max_column, min_row, max_row);
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		let expected_neighbour_count = 3;
 		assert_eq!(expected_neighbour_count, neighbours.len());
 	}
@@ -642,7 +680,14 @@ mod tests {
 	fn cubic_neighbours() {
 		let source: (i32, i32, i32) = (2, -1, -1);
 		let neighbours = node_neighbours_cubic(source, 3);
-		let actual = vec![(2, 0, -2), (3, -1, -2), (3, -2, -1), (2, -2, 0), (1, -1, 0), (1, 0, -1)];
+		let actual = vec![
+			(2, 0, -2),
+			(3, -1, -2),
+			(3, -2, -1),
+			(2, -2, 0),
+			(1, -1, 0),
+			(1, 0, -1),
+		];
 		assert_eq!(actual, neighbours);
 	}
 	#[test]

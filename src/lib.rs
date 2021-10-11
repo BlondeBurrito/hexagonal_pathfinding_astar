@@ -14,7 +14,7 @@
 //!  \      ▼      /
 //!   \___________/
 //! ```
-//! 
+//!
 //! Which influences the calculation to find the best path.
 //!
 //! ## Hexagon Grids and  Orientation
@@ -101,10 +101,10 @@
 //!             \_______/
 //! ```
 //!
-pub mod helpers;
-pub mod astar_offset;
-pub mod astar_cubic;
 pub mod astar_axial;
+pub mod astar_cubic;
+pub mod astar_offset;
+pub mod helpers;
 
 /// Specifies the orientation of the hexagon space in Offset layots. This is
 /// important for determining the available neighbouring nodes during expansion.

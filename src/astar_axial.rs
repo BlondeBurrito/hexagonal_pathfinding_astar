@@ -21,11 +21,11 @@
 //!```
 //!
 
+use crate::helpers::axial_to_cubic;
+use crate::helpers::node_distance;
+use crate::helpers::node_neighbours_axial;
 use ::std::collections::HashMap;
 use core::panic;
-use crate::helpers::node_distance;
-use crate::helpers::axial_to_cubic;
-use crate::helpers::node_neighbours_axial;
 
 /// From a starting node calculate the most efficient path to the end node
 ///
@@ -38,9 +38,9 @@ use crate::helpers::node_neighbours_axial;
 /// `count_rings` is the number of rings around the origin `(0, 0)` of the circular hexagonal grid. It
 /// is an inclusive value. NB: `count_rings` is NOT the nubmer of rings around the start or end node, it
 /// is explicitly the number of rings around the origin of our hexagon grid
-/// 
+///
 /// For instance from our origin of `(0, 0)`:
-/// 
+///
 ///```txt
 ///                              _________
 ///                             /    0    \
@@ -74,7 +74,7 @@ use crate::helpers::node_neighbours_axial;
 ///                            \           /
 ///                             \_________/
 ///  ```
-/// 
+///
 /// We have 2 rings of hexagons surrounding it.
 ///
 /// The return Vec contains a number of tuples which for `0..n` show the best path to take
@@ -101,10 +101,16 @@ pub fn astar_path(
 	// we use the ring boundary hence it's easier to check this in cubic coords
 	let cubic_start = axial_to_cubic(start_node);
 	let cubic_end = axial_to_cubic(end_node);
-	if cubic_start.0.abs() > count_rings || cubic_start.1.abs() > count_rings || cubic_start.2.abs() > count_rings {
+	if cubic_start.0.abs() > count_rings
+		|| cubic_start.1.abs() > count_rings
+		|| cubic_start.2.abs() > count_rings
+	{
 		panic!("Start node is outside of searchable grid")
 	}
-	if cubic_end.0.abs() > count_rings || cubic_end.1.abs() > count_rings || cubic_end.2.abs() > count_rings {
+	if cubic_end.0.abs() > count_rings
+		|| cubic_end.1.abs() > count_rings
+		|| cubic_end.2.abs() > count_rings
+	{
 		panic!("End node is outside of searchable grid")
 	}
 	// calculate the weight of each node and produce a new combined data set of everthing we need
@@ -114,10 +120,7 @@ pub fn astar_path(
 	for (k, v) in nodes.iter() {
 		nodes_weighted.insert(
 			k.to_owned(),
-			(
-				v.to_owned(),
-				calculate_node_weight(k, &end_node),
-			),
+			(v.to_owned(), calculate_node_weight(k, &end_node)),
 		);
 	}
 
@@ -151,8 +154,7 @@ pub fn astar_path(
 		// remove the first element ready for processing
 		let current_path = queue.swap_remove(0);
 		// expand the node in the current path
-		let available_nodes =
-			node_neighbours_axial(current_path.0, count_rings);
+		let available_nodes = node_neighbours_axial(current_path.0, count_rings);
 		// process each new path
 		for n in available_nodes.iter() {
 			let previous_complexities: f32 = current_path.3.clone();
@@ -224,10 +226,7 @@ fn a_star_score(complexity: f32, weighting: f32) -> f32 {
 /// your current node to the end node. For the Axial grid we cannot compute the
 /// number of jumps directly, instead we have to convert the Axial coordinates
 /// of our nodes to the Cubic based coordinate system.
-fn calculate_node_weight(
-	current_node: &(i32, i32),
-	end_node: &(i32, i32),
-) -> f32 {
+fn calculate_node_weight(current_node: &(i32, i32), end_node: &(i32, i32)) -> f32 {
 	let cubic_start = axial_to_cubic((current_node.0, current_node.1));
 	let cubic_end = axial_to_cubic((end_node.0, end_node.1));
 	// by finding the distance between nodes we're effectively finding the 'ring' it sits on which is the number of jumps to it
@@ -331,12 +330,7 @@ mod tests {
 		nodes.insert((-1, -1), 2.0);
 		let end_node: (i32, i32) = (2, -2);
 		let rings = 2;
-		let best = astar_path(
-			start_node,
-			nodes,
-			end_node,
-			rings,
-		);
+		let best = astar_path(start_node, nodes, end_node, rings);
 		let actual = vec![(0, 0), (0, 1), (1, 1), (2, 0), (2, -1), (2, -2)];
 		assert_eq!(actual, best);
 	}

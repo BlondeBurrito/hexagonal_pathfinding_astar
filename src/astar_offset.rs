@@ -37,12 +37,12 @@
 //! ```
 //!
 
+use crate::helpers::node_distance;
+use crate::helpers::node_neighbours_offset;
+use crate::helpers::offset_to_cubic;
+use crate::HexOrientation;
 use ::std::collections::HashMap;
 use core::panic;
-use crate::helpers::node_distance;
-use crate::helpers::offset_to_cubic;
-use crate::helpers::node_neighbours_offset;
-use crate::HexOrientation;
 
 /// From a starting node calculate the most efficient path to the end node
 ///
@@ -60,7 +60,7 @@ use crate::HexOrientation;
 /// `min_column`, `max_column`, `min_row` and `max_row` indicate the boundary of the hexagon space and are exclusive.
 /// For instance with a square grid space where the origin (bottom left) is `(0, 0)` and the top most right node is positioned at
 /// `(3, 3)`:
-/// 
+///
 ///```txt
 ///                 _________               _________
 ///                /         \             /         \
@@ -91,7 +91,7 @@ use crate::HexOrientation;
 ///   \           /           \           /
 ///    \_________/             \_________/
 ///  ```
-/// 
+///
 /// Our `min_column` and `min_row` will be equal to `-1` and our `max_column` and `max_row` will both equal `4`.
 ///
 /// `orientation` refers to your hexagonal grid layout.
@@ -122,10 +122,18 @@ pub fn astar_path(
 	}
 	// ensure start and end nodes are within the max bounds of the grid
 	// max bounds are exclusive hence equal to or greater than
-	if start_node.0 >= max_column || start_node.0 <= min_column || start_node.1 >= max_row || start_node.1 <= min_row {
+	if start_node.0 >= max_column
+		|| start_node.0 <= min_column
+		|| start_node.1 >= max_row
+		|| start_node.1 <= min_row
+	{
 		panic!("Start node is outside of searchable grid")
 	}
-	if end_node.0 >= max_column || end_node.0 <= min_column || end_node.1 >= max_row || end_node.1 <= min_row {
+	if end_node.0 >= max_column
+		|| end_node.0 <= min_column
+		|| end_node.1 >= max_row
+		|| end_node.1 <= min_row
+	{
 		panic!("End node is outside of searchable grid")
 	}
 	// calculate the weight of each node and produce a new combined data set of everthing we need
@@ -174,8 +182,14 @@ pub fn astar_path(
 		// remove the first element ready for processing
 		let current_path = queue.swap_remove(0);
 		// expand the node in the current path
-		let available_nodes =
-			node_neighbours_offset(current_path.0, &orientation, min_column, max_column, min_row, max_row);
+		let available_nodes = node_neighbours_offset(
+			current_path.0,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
 		// process each new path
 		for n in available_nodes.iter() {
 			let previous_complexities: f32 = current_path.3.clone();
