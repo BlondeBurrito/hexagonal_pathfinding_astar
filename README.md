@@ -329,7 +329,7 @@ Cargo.toml
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar", tag = "0.4.0" }
+hexagonal_pathfinding_astar = "0.4.1"
 ```
 
 Part of `xyz.rs`

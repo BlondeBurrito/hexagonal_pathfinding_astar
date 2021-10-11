@@ -1,10 +1,12 @@
 [package]
 name = "hexagonal_pathfinding_astar"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["BlondeBurrito"]
 edition = "2018"
-keywords = ["pathfinding", "astar", "a-star", "A*"]
+description = "A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons"
+keywords = ["pathfinding", "astar", "a-star", "gamedev"]
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/BlondeBurrito/hexagonal_pathfinding_astar"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
