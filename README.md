@@ -335,26 +335,27 @@ hexagonal_pathfinding_astar = { git = "https://github.com/BlondeBurrito/hexagona
 Part of `xyz.rs`
 
 ```rust
+use hexagonal_pathfinding_astar::*;
 // you are here
 let start_node: (i32, i32) = (0, 0);
 // keys are nodes, values are your measure of 'complexity' to traverse it
 let mut nodes: HashMap<(i32, i32), f32> = HashMap::new();
-nodes.insert((0,0), 1.0);
-nodes.insert((0,1), 1.0);
-nodes.insert((0,2), 1.0);
-nodes.insert((0,3), 3.0);
-nodes.insert((1,0), 2.0);
-nodes.insert((1,1), 9.0);
-nodes.insert((1,2), 4.0);
-nodes.insert((1,3), 2.0);
-nodes.insert((2,0), 2.0);
-nodes.insert((2,1), 6.0);
-nodes.insert((2,2), 8.0);
-nodes.insert((2,3), 9.0);
-nodes.insert((3,0), 3.0);
-nodes.insert((3,1), 4.0);
-nodes.insert((3,2), 5.0);
-nodes.insert((3,3), 2.0);
+nodes.insert((0, 0), 1.0);
+nodes.insert((0, 1), 1.0);
+nodes.insert((0, 2), 1.0);
+nodes.insert((0, 3), 3.0);
+nodes.insert((1, 0), 2.0);
+nodes.insert((1, 1), 9.0);
+nodes.insert((1, 2), 4.0);
+nodes.insert((1, 3), 2.0);
+nodes.insert((2, 0), 2.0);
+nodes.insert((2, 1), 6.0);
+nodes.insert((2, 2), 8.0);
+nodes.insert((2, 3), 9.0);
+nodes.insert((3, 0), 3.0);
+nodes.insert((3, 1), 4.0);
+nodes.insert((3, 2), 5.0);
+nodes.insert((3, 3), 2.0);
 // you want to go here
 let end_node: (i32, i32) = (3, 3);
 // the 'exclusive' limit of grid size
@@ -364,7 +365,7 @@ let min_row = -1;
 let max_row = 4;
 // the hexagon arrangement you are using
 let orientation = HexOrientation::FlatTopOddUp;
-let best = astar_path(start_node, nodes, end_node, min_column, max_column, min_row, max_row, orientation);
+let best = astar_offset::astar_path(start_node, nodes, end_node, min_column, max_column, min_row, max_row, orientation);
 // answer using above data = [(0,0), (0,1), (0,2), (1,2), (2,3), (3,3)]
 // the manual calculation for this can be found under `docs/calculations_done_manually.md`
 ```
