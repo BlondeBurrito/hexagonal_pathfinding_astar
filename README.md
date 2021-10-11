@@ -1,5 +1,7 @@
 ![linux](https://github.com/BlondeBurrito/hexagonal_pathfinding_astar/actions/workflows/build_linux.yml/badge.svg)
 ![windows](https://github.com/BlondeBurrito/hexagonal_pathfinding_astar/actions/workflows/build_windows.yml/badge.svg)
+[![crates.io](https://img.shields.io/crates/v/hexagonal_pathfinding_astar.svg)](https://crates.io/crates/hexagonal_pathfinding_astar)
+[![docs](https://img.shields.io/badge/docs-docs.rs-orange.svg)](https://docs.rs/hexagonal_pathfinding_astar)
 
 # hexagonal_pathfinding_astar
 
