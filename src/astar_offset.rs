@@ -2,7 +2,9 @@
 //!
 //! ## Hexagon Layout/Orientation
 //!
-//! Each node has a label defining its position, known as `(column, row)`. The A-Star calculation requires an `orientation` parameter which specifies what type of Offset layout you are using, these are found in the enum `HexOrientation`.
+//! Each node has a label defining its position, known as `(column, row)`. The A-Star calculation
+//! requires an `orientation` parameter which specifies what type of Offset layout you are using,
+//! these are found in the enum `HexOrientation`.
 //!
 //! ### Flat Topped - odd columns shifted up `HexOrientation::FlatTopOddUp`
 //!
