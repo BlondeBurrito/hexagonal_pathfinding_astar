@@ -5,7 +5,7 @@
 
 # hexagonal_pathfinding_astar
 
-This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
+This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge. The algorithm has been implemented for Offset, Axial and Cubic coordinate systems with a selection of helper functions which can be used to convert between coordinate systems, calculate distances between hexagons and more.
 
 It's rather different in that it follows a convention whereby a hexagon has a measurement which reflects the difficulty of traversing a distance over time called complexity (don't ask why I didn't name it velocity).
 
@@ -99,15 +99,76 @@ As we still have a route avaiable with a better A-Star score we expand it, `O1` 
 
 Now we know which path is better, moving via `O2` has a better final A-Star score (it is smaller).
 
-The idea is that for a large number of points and paths certain routes will not be explored as they'd have much higher A-Star scores, this cuts down on search time. At the bottom of this README is a full example using a hexagon grid with numerous points and paths to show this more clearly.
+The idea is that for a large number of points and paths certain routes will not be explored as they'd have much higher A-Star scores, this cuts down on search time. Within the `docs` directory of this repository there are some manual calculations for some hexagonal grid spaces showcasing the process.
 
 ## Difference between normal A-Star and this Hexagon-world Weirdness <a name="diff"></a>
 
 Traditional A-Star uses `distance` and `weight` (normally called a heuristic) to determine an optimal path, this encourages it to seek a path to a single end point as effciently as possbile. The weight being a measurement between a point and end goal. Distances can vary enourmously.
 
-For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added two new heuristics, each based on half of the width of a hexagon. Whereby one half of a hexagon could have a very efficient heuristic and the other half poor. I denote the combination of these two heuristics 'complexity' where a high complexity indicates a bad path to follow and replaces distance in the A-Star calculation. Weight is a linear measure of how far away a hexagon is from the end point/hexagon and is calculated within the library rather than being supplied.
+For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added two new heuristics, each based on half of the width of a hexagon. Whereby one half of a hexagon could have a very efficient heuristic and the other half poor. I denote the combination of these two heuristics 'complexity' where a high complexity indicates a bad path to follow and replaces distance in the A-Star calculation. Weight is a linear measure of how far away a hexagon is from the end point/hexagon and is calculated within the library rather than being supplied - it is effecitvely the number of jumps you'd have to make going from `hex-Current` to `hex-End`.
 
-In a way 'complexity' is a generalisation of unit distance... hmmm, need to think on it.
+Diagrammatically we can show a grid with `complexity` as `C`, with `weights` as `W` based on each nodes distance to the `E` node (this example uses Axial coordiantes on the North and South-East edge of each hex):
+
+```txt
+                              _________
+                             /    0    \
+                            /           \
+                  _________/     C:1     \_________
+                 /   -1    \     W:2  -2 /    1    \
+                /           \           /           \
+      _________/     C:2     \_________/     C:14    \_________
+     /   -2    \     W:3  -1 /    0    \     W:1  -2 /    2    \
+    /           \           /           \           /   🔴E     \
+   /     C:1     \_________/     C:1     \_________/     C:1     \
+   \     W:4   0 /   -1    \     W:2  -1 /    1    \     W:0  -2 /
+    \           /           \           /           \           /
+     \_________/     C:7     \_________/     C:15    \_________/
+     /   -2    \     W:3   0 /    0    \     W:1  -1 /    2    \
+    /           \           /    🟩S    \           /           \
+   /     C:8     \_________/     C:1     \_________/     C:1     \
+   \     W:4   1 /   -1    \     W:2   0 /    1    \     W:1  -1 /
+    \           /           \           /           \           /
+     \_________/     C:6     \_________/     C:14    \_________/
+     /   -2    \     W:3   1 /    0    \     W:2   0 /    2    \
+    /           \           /           \           /           \
+   /     C:1     \_________/     C:2     \_________/     C:1     \
+   \     W:4   2 /   -1    \     W:3   1 /    1    \     W:2   0 /
+    \           /           \           /           \           /
+     \_________/     C:3     \_________/     C:1     \_________/
+               \     W:4   2 /    0    \     W:3   1 /
+                \           /           \           /
+                 \_________/     C:1     \_________/
+                           \     W:4   2 /
+                            \           /
+                             \_________/
+```
+
+Moving from `S` to `E` with the Axial implementation reveals the best path to be:
+
+```txt
+                           _________
+                          /    2    \
+                         /   🔴E     \
+                        /     C:1     \
+                        \     W:0  -2 /
+                         \           /
+   _________              \_________/
+  /    0    \             /    2    \
+ /   🟩S     \           /           \
+/     C:1     \         /     C:1     \
+\     W:2   0 /         \     W:1  -1 /
+ \           /           \           /
+  \_________/             \_________/
+  /    0    \             /    2    \
+ /           \           /           \
+/     C:2     \_________/     C:1     \
+\     W:3   1 /    1    \     W:2   0 /
+ \           /           \           /
+  \_________/     C:1     \_________/
+            \     W:3   1 /
+             \           /
+              \_________/
+```
 
 ## Hexagon Grids and  Orientation <a name="orientation"></a>
 
@@ -144,7 +205,7 @@ south-west = (q - 1, r + 1)
 north-west = (q - 1, r)
 ```
 
-Programmatically these can be found with the public function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
+Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
 
 ```rust
 pub fn node_neighbours_axial(
@@ -186,7 +247,7 @@ south-west = (x - 1, y, z + 1)
 north-west = (x - 1, y + 1, z)
 ```
 
-Programmatically these can be found with the public function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
+Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
 
 ```rust
 pub fn node_neighbours_cubic(
@@ -243,7 +304,7 @@ south-west = (column - 1, row)
 north-west = (column - 1, row + 1)
 ```
 
-Programmatically these can be found with the public function where the grid has boundaries in space denoted by the min and max values:
+Programmatically these can be found with a public helper function where the grid has boundaries in space denoted by the min and max values:
 
 ```rust
 pub fn node_neighbours_offset(
@@ -300,7 +361,7 @@ south-west = (column - 1, row - 1)
 north-west = (column - 1, row)
 ```
 
-Programmatically these can be found with the public function where the grid has boundaries in space denoted by the min and max values:
+Programmatically these can be found with a public helper function where the grid has boundaries in space denoted by the min and max values:
 
 ```rust
 pub fn node_neighbours_offset(
@@ -317,11 +378,11 @@ Where `orientation` must be `HexOrientation::FlatTopOddDown`
 
 ## What Coordinate System Should You Use? <a name="wcssyyu"></a>
 
-If you're building a square/rectangular grid I'd say the Offset layout is the easiest to begin working with, it is simply just columns and rows on an `x-y` like axes.
+If you're building a square/rectangular grid I'd say the Offset layout is the easiest to begin working with, it is simply just columns and rows on an `x-y` like axes with a little column shifting.
 
 If you're building a circular grid then Axial and Cubic are easily the best as their coordinate systems naturally fit a circular space.
 
-You could use Axial and Cubic for a square/rectangular grid by creating a very large circle and using extremely high complexity values to mark out hexagons in the four edges of the space however this is just a waste of memory to store and for complex pathfinding the algorithm may wate time probing a corner.
+You could use Axial and Cubic for a square/rectangular grid by creating a very large circle and using extremely high complexity values to mark out hexagons in the four edges of the space, however this is just a waste of memory to store and for complex pathfinding the algorithm may wate time probing a corner.
 
 ## How to use <a name="howto"></a>
 

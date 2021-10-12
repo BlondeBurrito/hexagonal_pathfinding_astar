@@ -196,7 +196,7 @@ pub fn cubic_to_axial(node_coords: (i32, i32, i32)) -> (i32, i32) {
 	return (q, r);
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
-///  where 1min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
+///  where 'min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
 /// are exclusive values. This means that for most source hexagons 6 neighbours will be expanded but
 /// for those lining the boundaries fewer neighrbors will be discovered.
 ///

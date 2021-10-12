@@ -106,7 +106,7 @@ pub mod astar_cubic;
 pub mod astar_offset;
 pub mod helpers;
 
-/// Specifies the orientation of the hexagon space in Offset layots. This is
+/// Specifies the orientation of the hexagon space in Offset layouts. This is
 /// important for determining the available neighbouring nodes during expansion.
 ///
 /// Flat-top odd columns moved up
