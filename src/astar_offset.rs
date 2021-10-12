@@ -269,8 +269,8 @@ fn calculate_node_weight(
 	end_node: &(i32, i32),
 	orientation: &HexOrientation,
 ) -> f32 {
-	let cubic_start = offset_to_cubic((current_node.0 as i32, current_node.1 as i32), orientation);
-	let cubic_end = offset_to_cubic((end_node.0 as i32, end_node.1 as i32), orientation);
+	let cubic_start = offset_to_cubic((current_node.0, current_node.1), orientation);
+	let cubic_end = offset_to_cubic((end_node.0, end_node.1), orientation);
 	// by finding the distance between nodes we're effectively finding the 'ring' it sits on which is the number of jumps to it
 	node_distance(cubic_start, cubic_end) as f32
 }
