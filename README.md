@@ -105,7 +105,7 @@ The idea is that for a large number of points and paths certain routes will not 
 
 ## Difference between normal A-Star and this Hexagon-world Weirdness <a name="diff"></a>
 
-Traditional A-Star uses `distance` and `weight` (normally called a heuristic) to determine an optimal path, this encourages it to seek a path to a single end point as effciently as possbile. The weight being a measurement between a point and end goal. Distances can vary enourmously.
+Traditional A-Star uses `distance` and `weight` (normally called a heuristic) to determine an optimal path, this encourages it to seek a path to a single end point as efficiently as possbile. The weight being a measurement between a point and end goal. Distances can vary enourmously.
 
 For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added a new heuristic called 'complexity' which is the difficulty of traversing a hexagon where a high complexity indicates an expensive path to travel. It is critical to note that movement is based on moving from the center of one hexagon to another, meaning that complexity of movement is based on half of the starting hexagons complexity value plus half the complexity of the target hexagons complexity value.
 
