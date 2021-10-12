@@ -69,7 +69,9 @@
 //!
 //! ## Offset Coordinates
 //!
-//! Offset assumes that all hexagons have been plotted across a plane where the origin points sits at the bottom left (in theory you can have negative coordinates expanding into the other 3 quadrants but I haven't tested these here).
+//! Offset assumes that all hexagons have been plotted across a plane where the origin points sits
+//! at the bottom left (in theory you can have negative coordinates expanding into the other 3
+//! quadrants but I haven't tested these here).
 //!
 //! Each node has a label defining its position, known as `(column, row)`.
 //!
@@ -89,9 +91,13 @@
 //!    \_______/         \_______/
 //! ```
 //!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the `column` value by one.
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at
+//! (0,0) and wish to discover the node to its North-East, (1,0), we can simply increment the
+//! `column` value by one.
 //!
-//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have to increment both the `column` value and the `row` value. I.e the calculation changes depending on whether the odd column has been shifted up or down.
+//! However if we take the node (1,0) and wish to discover its North-East node at (2,1) we have
+//! to increment both the `column` value and the `row` value. I.e the calculation changes depending
+//! on whether the odd column has been shifted up or down.
 //!
 //! In full for a node in an even column we can calculate a nodes neighbours thus:
 //!
@@ -115,7 +121,9 @@
 //! north-west = (column - 1, row + 1)
 //! ```
 //!
-//! Programmatically these can be found with the public helper function `node_neighbours_offset()` where the grid has boundaries in space denoted by the min and max values and`orientation` must be `HexOrientation::FlatTopOddUp`
+//! Programmatically these can be found with the public helper function `node_neighbours_offset()`
+//! where the grid has boundaries in space denoted by the min and max values and`orientation` must
+//! be `HexOrientation::FlatTopOddUp`
 //!
 //! ### Flat Topped - odd columns shifted down
 //!
@@ -133,9 +141,12 @@
 //!             \_______/
 //! ```
 //!
-//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and `row` values by one.
+//! The column shift changes how we discover nearby nodes. For instance if we take the node at (0,0)
+//! and wish to discover the node to its North-East, (1,1), we increment the `column` and `row`
+//! values by one.
 //!
-//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to only increment the `column` value by one.
+//! However if we take the node (1,1) and wish to discover its North-East node at (2,1) we have to
+//! only increment the `column` value by one.
 //!
 //! In full for a node in an even column we can calculate a nodes neighbours thus:
 //!
@@ -159,7 +170,9 @@
 //! north-west = (column - 1, row)
 //! ```
 //!
-//! Programmatically these can be found with the public helper function `node_neighbours_offset()` where the grid has boundaries in space denoted by the min and max values and`orientation` must be `HexOrientation::FlatTopOddDown`
+//! Programmatically these can be found with the public helper function `node_neighbours_offset()`
+//! where the grid has boundaries in space denoted by the min and max values and`orientation` must
+//! be `HexOrientation::FlatTopOddDown`
 
 use crate::HexOrientation;
 
