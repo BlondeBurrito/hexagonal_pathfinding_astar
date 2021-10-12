@@ -392,6 +392,8 @@ You could use Axial and Cubic for a square/rectangular grid by creating a very l
 
 ## How to use <a name="howto"></a>
 
+TODO: Expand section for each coord system
+
 Offset exmaple.
 
 Cargo.toml
