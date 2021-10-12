@@ -347,7 +347,7 @@ pub fn node_neighbours_offset(
 		}
 	}
 }
-/// Finds the neighboring nodes in an Cubic coordinate system. `source` is of the form
+/// Finds the neighboring nodes in a Cubic coordinate system. `source` is of the form
 /// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
 /// the number of rings around the origin of the grid - the value is inclusive.
 ///
