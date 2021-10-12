@@ -3,6 +3,8 @@
 [![crates.io](https://img.shields.io/crates/v/hexagonal_pathfinding_astar.svg)](https://crates.io/crates/hexagonal_pathfinding_astar)
 [![docs](https://img.shields.io/badge/docs-docs.rs-orange.svg)](https://docs.rs/hexagonal_pathfinding_astar)
 
+**Shout out**: I want to say thanks to [Red Blob Games](https://www.redblobgames.com/grids/hexagons/), they have a fantasic set of guides/tutorials detailing hexagonal spaces and the associated geometries which have helped me enourmously in Rust-ifying concepts
+
 # hexagonal_pathfinding_astar
 
 This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons. It's intended to calculate the most optimal path to a target hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge. The algorithm has been implemented for Offset, Axial and Cubic coordinate systems with a selection of helper functions which can be used to convert between coordinate systems, calculate distances between hexagons and more.
