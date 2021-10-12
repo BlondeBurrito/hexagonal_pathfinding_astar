@@ -1,6 +1,8 @@
 //! This library is an implementation of the A-Star pathfinding algorithm tailored for traversing a bespoke
 //! collection of weighted hexagons. It's intended to calculate the most optimal path to a target
 //! hexagon where you are traversing from the centre of one hexagon to the next along a line orthogonal to a hexagon edge.
+//! The algorithm has been implemented for Offset, Axial and Cubic coordinate systems with a selection of helper functions
+//! which can be used to convert between coordinate systems, calculate distances between hexagons and more.
 //!
 //! The calculations are dpendent on the layout of your hexagon grid (coordinate system) and each hexagon has an associated complexity of traversing a particular node.
 //!

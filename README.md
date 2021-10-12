@@ -80,7 +80,7 @@ We then consider the alternate route of moving from `S` to `O2`:
 * The distance between `S` and `O2` is `5`
 * The A-Star score is therefore `5 + 1 = 6`
 
-We can see that currently the most optimal route is to move from `S` to `O2`, as moving to `O2` has a better A-Star score we interrogate this point first.
+We can see that currently the most optimal route is to move from `S` to `O2` - as moving to `O2` has a better A-Star score we interrogate this point first.
 
 From `O2` we discover that we can traverse to `E`:
 
@@ -105,7 +105,9 @@ The idea is that for a large number of points and paths certain routes will not 
 
 Traditional A-Star uses `distance` and `weight` (normally called a heuristic) to determine an optimal path, this encourages it to seek a path to a single end point as effciently as possbile. The weight being a measurement between a point and end goal. Distances can vary enourmously.
 
-For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added two new heuristics, each based on half of the width of a hexagon. Whereby one half of a hexagon could have a very efficient heuristic and the other half poor. I denote the combination of these two heuristics 'complexity' where a high complexity indicates a bad path to follow and replaces distance in the A-Star calculation. Weight is a linear measure of how far away a hexagon is from the end point/hexagon and is calculated within the library rather than being supplied - it is effecitvely the number of jumps you'd have to make going from `hex-Current` to `hex-End`.
+For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added a new heuristic called 'complexity' which is the difficulty of traversing a hexagon where a high complexity indicates an expensive path to travel. It is critical to note that movement is based on moving from the center of one hexagon to another, meaning that complexity of movement is based on half of the starting hexagons complexity value plus half the complexity of the target hexagons complexity value.
+
+Weight is a linear measure of how far away a hexagon is from the end point/hexagon and is calculated within the library rather than being supplied - it is effecitvely the number of jumps you'd have to make going from `hex-Current` to `hex-End`.
 
 Diagrammatically we can show a grid with `complexity` as `C`, with `weights` as `W` based on each nodes distance to the `E` node (this example uses Axial coordiantes on the North and South-East edge of each hex):
 
@@ -142,6 +144,8 @@ Diagrammatically we can show a grid with `complexity` as `C`, with `weights` as 
                             \           /
                              \_________/
 ```
+
+The complexity of movement between node `S`, `(0, 0)`, and the node immediately to its south, `(0, 1)` is the sum of the half complexities, ie `(1 * 0.5) + (2 * 0.5) = 1.5`. These half values are what the algorithm uses within its A-Star calculations to simulate center to center movement.
 
 Moving from `S` to `E` with the Axial implementation reveals the best path to be:
 
