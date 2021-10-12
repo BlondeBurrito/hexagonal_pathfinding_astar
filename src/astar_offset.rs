@@ -220,10 +220,11 @@ pub fn astar_path(
 					// If we do but this new path is better then replace it, otherwise discard
 					let mut new_queue_item_required_for_node = true;
 					for mut q in queue.iter_mut() {
-						new_queue_item_required_for_node = false;
 						if &q.0 == n {
-							// if existing score is worse then replace the queue item
+							// if existing score is worse then replace the queue item and
+							// don't allow a fresh queue item to be added
 							if &q.1 >= &astar {
+								new_queue_item_required_for_node = false;
 								q.1 = astar;
 								q.2 = previous_nodes_traversed.clone();
 								q.3 = complexity;
