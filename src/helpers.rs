@@ -183,13 +183,13 @@ pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) ->
 			let x: i32 = node_coords.0;
 			let z: i32 = node_coords.1 - (node_coords.0 - (node_coords.0 & 1)) / 2;
 			let y: i32 = -x - z;
-			return (x, y, z);
+			(x, y, z)
 		}
 		HexOrientation::FlatTopOddDown => {
 			let x: i32 = node_coords.0;
 			let z: i32 = node_coords.1 - (node_coords.0 + (node_coords.0 & 1)) / 2;
 			let y: i32 = -x - z;
-			return (x, y, z);
+			(x, y, z)
 		}
 	}
 }
@@ -199,14 +199,14 @@ pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	let x = node_coords.0;
 	let z = node_coords.1;
 	let y = -z - x;
-	return (x, y, z);
+	(x, y, z)
 }
 /// Convert a node with Cubic coordinates to Axial coordinates. `node_coords` is of the form
 /// `(x, y, z)`.
 pub fn cubic_to_axial(node_coords: (i32, i32, i32)) -> (i32, i32) {
 	let q = node_coords.0;
 	let r = node_coords.2;
-	return (q, r);
+	(q, r)
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
 ///  where 'min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
@@ -266,7 +266,6 @@ pub fn node_neighbours_offset(
 				if source.0 - 1 > min_column {
 					neighbours.push((source.0 - 1, source.1));
 				}
-				return neighbours;
 			} else {
 				// odd column
 				// north
@@ -293,7 +292,6 @@ pub fn node_neighbours_offset(
 				if source.0 - 1 < max_column && source.1 + 1 < max_row {
 					neighbours.push((source.0 - 1, source.1 + 1))
 				}
-				return neighbours;
 			}
 		}
 		//   ___
@@ -328,7 +326,6 @@ pub fn node_neighbours_offset(
 				if source.0 - 1 > min_column && source.1 + 1 < max_row {
 					neighbours.push((source.0 - 1, source.1 + 1));
 				}
-				return neighbours;
 			} else {
 				// odd column
 				// north
@@ -355,10 +352,10 @@ pub fn node_neighbours_offset(
 				if source.0 - 1 > min_column {
 					neighbours.push((source.0 - 1, source.1))
 				}
-				return neighbours;
 			}
 		}
 	}
+	neighbours
 }
 /// Finds the neighboring nodes in a Cubic coordinate system. `source` is of the form
 /// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
@@ -381,6 +378,7 @@ pub fn node_neighbours_offset(
 ///             \_______/
 /// ```
 /// Will have a `count_rings_from_origin` of 1.
+#[allow(clippy::int_plus_one)]
 pub fn node_neighbours_cubic(
 	source: (i32, i32, i32),
 	count_rings_from_origin: i32,
@@ -410,7 +408,7 @@ pub fn node_neighbours_cubic(
 	if (source.0 - 1).abs() <= count_rings_from_origin && source.1 + 1 <= count_rings_from_origin {
 		neighbours.push((source.0 - 1, source.1 + 1, source.2))
 	}
-	return neighbours;
+	neighbours
 }
 /// Finds the neighboring nodes in an Axial coordinate system. `source` is of the form
 /// `(q, r)` where `q` is the column and `r` the row. The node grid is in a circular arrangment
@@ -440,9 +438,9 @@ pub fn node_neighbours_axial(source: (i32, i32), count_rings_from_origin: i32) -
 	let cubic = axial_to_cubic(source);
 	let n = node_neighbours_cubic(cubic, count_rings_from_origin);
 	for i in n.iter() {
-		neighbours.push(cubic_to_axial(i.clone()))
+		neighbours.push(cubic_to_axial(*i))
 	}
-	return neighbours;
+	neighbours
 }
 
 /// The distance between two nodes by using cubic coordinates

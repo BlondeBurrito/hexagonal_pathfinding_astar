@@ -99,6 +99,7 @@ use core::panic;
 /// `orientation` refers to your hexagonal grid layout.
 ///
 /// The return Vec contains a number of tuples which for `0..n` show the best path to take
+#[allow(clippy::too_many_arguments)]
 pub fn astar_path(
 	start_node: (i32, i32),
 	nodes: HashMap<(i32, i32), f32>,
@@ -164,18 +165,17 @@ pub fn astar_path(
 	// discovered node we can quickly decide to discard or explore the new route
 	let mut node_astar_scores: HashMap<(i32, i32), f32> = HashMap::new();
 	// add starting node a-star score to data set (starting node score is just its weight)
-	node_astar_scores.insert(start_node.clone(), start_weight.clone());
+	node_astar_scores.insert(start_node, start_weight);
 
 	// create a queue of nodes to be processed based on discovery
 	// of form (current_node, a_star_score, vec_previous_nodes_traversed, total_complexity)
-	let mut queue = Vec::new();
-	// add starting node to queue
-	queue.push((
-		start_node.clone(),
+	// start by add starting node to queue
+	let mut queue = vec![(
+		start_node,
 		start_weight, // we haven't moved so starting node score is just its weight
 		Vec::<(i32, i32)>::new(),
 		0.0,
-	));
+	)];
 
 	// target node will eventually be shifted to first of queue so finish processing once it arrives, meaning that we know the best path
 	while queue[0].0 != end_node {
@@ -194,19 +194,19 @@ pub fn astar_path(
 		);
 		// process each new path
 		for n in available_nodes.iter() {
-			let previous_complexities: f32 = current_path.3.clone();
+			let previous_complexities: f32 = current_path.3;
 			let current_node_complexity: f32 = match nodes_weighted.get(&current_path.0) {
 				Some(x) => x.0 * 0.5,
 				None => panic!("Unable to find current node complexity for {:?}", &n),
 			};
-			let target_node_complexity: f32 = match nodes_weighted.get(&n) {
+			let target_node_complexity: f32 = match nodes_weighted.get(n) {
 				Some(x) => x.0 * 0.5,
 				None => panic!("Unable to find target node complexity for {:?}", &n),
 			};
 			// calculate its fields
 			let complexity =
 				previous_complexities + target_node_complexity + current_node_complexity;
-			let target_weight: f32 = match nodes_weighted.get(&n) {
+			let target_weight: f32 = match nodes_weighted.get(n) {
 				Some(x) => x.1,
 				None => panic!("Unable to find node weight for {:?}", &n),
 			};
@@ -214,10 +214,10 @@ pub fn astar_path(
 			let mut previous_nodes_traversed = current_path.2.clone();
 			previous_nodes_traversed.push(current_path.0);
 			// update the a-star data set
-			if node_astar_scores.contains_key(&n) {
-				if node_astar_scores.get(&n) >= Some(&astar) {
+			if node_astar_scores.contains_key(n) {
+				if node_astar_scores.get(n) >= Some(&astar) {
 					// data set contains a worse score so update the set with the better score
-					node_astar_scores.insert(n.clone(), astar);
+					node_astar_scores.insert(*n, astar);
 					// search the queue to see if we already have a route to this node.
 					// If we do but this new path is better then replace it, otherwise discard
 					let mut new_queue_item_required_for_node = true;
@@ -225,7 +225,7 @@ pub fn astar_path(
 						if &q.0 == n {
 							// if existing score is worse then replace the queue item and
 							// don't allow a fresh queue item to be added
-							if &q.1 >= &astar {
+							if q.1 >= astar {
 								new_queue_item_required_for_node = false;
 								q.1 = astar;
 								q.2 = previous_nodes_traversed.clone();
@@ -236,13 +236,13 @@ pub fn astar_path(
 					// queue doesn't contain a route to this node, as we have now found a better route
 					// update the queue with it so it can be explored
 					if new_queue_item_required_for_node {
-						queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
+						queue.push((*n, astar, previous_nodes_traversed, complexity));
 					}
 				}
 			} else {
 				// no record of node and new path required in queue
-				node_astar_scores.insert(n.clone(), astar);
-				queue.push((n.clone(), astar, previous_nodes_traversed, complexity));
+				node_astar_scores.insert(*n, astar);
+				queue.push((*n, astar, previous_nodes_traversed, complexity));
 			}
 		}
 
@@ -252,7 +252,7 @@ pub fn astar_path(
 	let mut best_path = queue[0].2.clone();
 	// add end node to data
 	best_path.push(end_node);
-	return best_path;
+	best_path
 }
 
 /// Determines a score to rank a chosen path, lower scores are better
