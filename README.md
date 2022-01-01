@@ -258,8 +258,18 @@ Programmatically these can be found with a public helper function where the grid
 ```rust
 pub fn node_neighbours_cubic(
     source: (i32, i32, i32),
-    count_rings: i32,
+    count_rings_from_origin: i32,
 ) -> Vec<(i32, i32, i32)>
+```
+
+Additionally with a cubic arrangement there's a helper function for finding the nodes sat on a ring around a given source node:
+
+```rust
+pub fn node_ring_cubic(
+    source: (i32, i32, i32),
+    ring_number: i32,
+    count_rings_from_origin: i32,
+) -> Vec<(i32, i32, i32)> {
 ```
 
 ### Offset Coordinates <a name="offset"></a>
@@ -400,7 +410,7 @@ Cargo.toml
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = "0.6"
+hexagonal_pathfinding_astar = "0.7"
 ```
 
 Part of `xyz.rs`

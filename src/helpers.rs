@@ -358,10 +358,11 @@ pub fn node_neighbours_offset(
 	neighbours
 }
 /// Finds the neighboring nodes in a Cubic coordinate system. `source` is of the form
-/// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
-/// the number of rings around the origin of the grid - the value is inclusive.
+/// `(x, y, z)` and denotes the node from which neighbours are discovered. The node grid is in a
+/// circular arrangement with `count_rings_from_origin` being the number of rings around the origin
+/// of the entire grid, this prevents returning theoretical nodes which exist outside of the grid - the value is inclusive.
 ///
-/// For instance:
+/// For instance if the entire grid is:
 /// ```txt
 ///              _______
 ///             /   0   \
@@ -377,38 +378,14 @@ pub fn node_neighbours_offset(
 ///            \ -1    1 /
 ///             \_______/
 /// ```
-/// Will have a `count_rings_from_origin` of 1.
+/// Will have a `count_rings_from_origin` of 1 preventing returning non existent nodes.
 #[allow(clippy::int_plus_one)]
 pub fn node_neighbours_cubic(
 	source: (i32, i32, i32),
 	count_rings_from_origin: i32,
 ) -> Vec<(i32, i32, i32)> {
-	let mut neighbours = Vec::new();
-	// north (x, y + 1, z - 1)
-	if source.1 + 1 <= count_rings_from_origin && (source.2 - 1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0, source.1 + 1, source.2 - 1))
-	}
-	// north-east (x + 1, y, z - 1)
-	if source.0 + 1 <= count_rings_from_origin && (source.2 - 1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0 + 1, source.1, source.2 - 1))
-	}
-	// south-east (x + 1, y - 1, z)
-	if source.0 + 1 <= count_rings_from_origin && (source.1 - 1).abs() <= count_rings_from_origin {
-		neighbours.push((source.0 + 1, source.1 - 1, source.2))
-	}
-	// south (x, y - 1, z + 1)
-	if (source.1 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
-		neighbours.push((source.0, source.1 - 1, source.2 + 1))
-	}
-	// south-west (x - 1, y, z + 1)
-	if (source.0 - 1).abs() <= count_rings_from_origin && source.2 + 1 <= count_rings_from_origin {
-		neighbours.push((source.0 - 1, source.1, source.2 + 1))
-	}
-	// north-west (x - 1, y + 1, z)
-	if (source.0 - 1).abs() <= count_rings_from_origin && source.1 + 1 <= count_rings_from_origin {
-		neighbours.push((source.0 - 1, source.1 + 1, source.2))
-	}
-	neighbours
+	// the neighbours are on the first ring hence we hardcode the ring_number
+	node_ring_cubic(source, 1, count_rings_from_origin)
 }
 /// Finds the neighboring nodes in an Axial coordinate system. `source` is of the form
 /// `(q, r)` where `q` is the column and `r` the row. The node grid is in a circular arrangment
@@ -439,6 +416,73 @@ pub fn node_neighbours_axial(source: (i32, i32), count_rings_from_origin: i32) -
 	let n = node_neighbours_cubic(cubic, count_rings_from_origin);
 	for i in n.iter() {
 		neighbours.push(cubic_to_axial(*i))
+	}
+	neighbours
+}
+/// Finds the nodes on a ring around a given source point in a Cubic coordinate system. `source` is of the form
+/// `(x, y, z)`. The node grid is in a circular arrangement with `count_rings_from_origin` being
+/// the number of rings around the origin of the entire grid, this prevents returning nodes which exist outside of the
+/// grid - the value is inclusive. 'ring_number' is the particular ring you want to know the nodes of
+///
+/// For instance:
+/// ```txt
+///              _______
+///             /   0   \
+///     _______/         \_______
+///    /  -1   \ 1    -1 /   1   \
+///   /         \_______/         \
+///   \ 1     0 /   x   \ 0    -1 /
+///    \_______/         \_______/
+///    /  -1   \ y     z /   1   \
+///   /         \_______/         \
+///   \ 0     1 /   0   \ -1    0 /
+///    \_______/         \_______/
+///            \ -1    1 /
+///             \_______/
+/// ```
+/// With a `ring_number = 1` will find the immediate neighbouring nodes around the centre
+#[allow(clippy::int_plus_one)]
+pub fn node_ring_cubic(
+	source: (i32, i32, i32),
+	ring_number: i32,
+	count_rings_from_origin: i32,
+) -> Vec<(i32, i32, i32)> {
+	let mut neighbours = Vec::new();
+	// north (x, y + ring_number, z - ring_number)
+	if (source.1 + ring_number).abs() <= count_rings_from_origin
+		&& (source.2 - ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0, source.1 + ring_number, source.2 - ring_number))
+	}
+	// north-east (x + ring_number, y, z - ring_number)
+	if (source.0 + ring_number).abs() <= count_rings_from_origin
+		&& (source.2 - ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 + ring_number, source.1, source.2 - ring_number))
+	}
+	// south-east (x + ring_number, y - ring_number, z)
+	if (source.0 + ring_number).abs() <= count_rings_from_origin
+		&& (source.1 - ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 + ring_number, source.1 - ring_number, source.2))
+	}
+	// south (x, y - ring_number, z + ring_number)
+	if (source.1 - ring_number).abs() <= count_rings_from_origin
+		&& (source.2 + ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0, source.1 - ring_number, source.2 + ring_number))
+	}
+	// south-west (x - ring_number, y, z + ring_number)
+	if (source.0 - ring_number).abs() <= count_rings_from_origin
+		&& (source.2 + ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 - ring_number, source.1, source.2 + ring_number))
+	}
+	// north-west (x - ring_number, y + ring_number, z)
+	if (source.0 - ring_number).abs() <= count_rings_from_origin
+		&& (source.1 + ring_number).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 - ring_number, source.1 + ring_number, source.2))
 	}
 	neighbours
 }
