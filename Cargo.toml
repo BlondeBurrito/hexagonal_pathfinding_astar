@@ -1,6 +1,6 @@
 [package]
 name = "hexagonal_pathfinding_astar"
-version = "0.6.0"
+version = "0.7.0"
 rust-version = "1.56.0"
 authors = ["BlondeBurrito"]
 edition = "2021"
