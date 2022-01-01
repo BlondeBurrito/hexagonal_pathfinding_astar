@@ -410,7 +410,7 @@ Cargo.toml
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = "0.7"
+hexagonal_pathfinding_astar = "0.8"
 ```
 
 Part of `xyz.rs`

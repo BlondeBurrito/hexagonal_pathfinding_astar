@@ -201,12 +201,44 @@ pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	let y = -z - x;
 	(x, y, z)
 }
+/// Convert a node with Axial coordinates to Offset coordinates based on an orientation. `node_coords` is of the form
+/// `(q, r)` where `q` is the column and `r` the row
+pub fn axial_to_offset(node_coords: (i32, i32), orientation: &HexOrientation) -> (i32, i32) {
+	match orientation {
+		HexOrientation::FlatTopOddUp => {
+			let x: i32 = node_coords.0;
+			let y: i32 = node_coords.1 + (node_coords.0 + (node_coords.0 & 1)) / 2;
+			(x, y)
+		}
+		HexOrientation::FlatTopOddDown => {
+			let x: i32 = node_coords.0;
+			let y: i32 = node_coords.1 + (node_coords.0 - (node_coords.0 & 1)) / 2;
+			(x, y)
+		}
+	}
+}
 /// Convert a node with Cubic coordinates to Axial coordinates. `node_coords` is of the form
 /// `(x, y, z)`.
 pub fn cubic_to_axial(node_coords: (i32, i32, i32)) -> (i32, i32) {
 	let q = node_coords.0;
 	let r = node_coords.2;
 	(q, r)
+}
+/// Convert a node with Cubic coordinates to Offset coordinates based on an orientation. `node_coords` is of the form
+/// `(x, y, z)`.
+pub fn cubic_to_offset(node_coords: (i32, i32, i32), orientation: &HexOrientation) -> (i32, i32) {
+	match orientation {
+		HexOrientation::FlatTopOddUp => {
+			let x: i32 = node_coords.0;
+			let y: i32 = node_coords.2 + (node_coords.0 + (node_coords.0 & 1)) / 2;
+			(x, y)
+		}
+		HexOrientation::FlatTopOddDown => {
+			let x: i32 = node_coords.0;
+			let y: i32 = node_coords.2 + (node_coords.0 - (node_coords.0 & 1)) / 2;
+			(x, y)
+		}
+	}
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
 ///  where 'min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
@@ -752,5 +784,37 @@ mod tests {
 		let neighbours = node_neighbours_cubic(source, 2);
 		let actual = vec![(2, 0, -2), (2, -2, 0), (1, -1, 0), (1, 0, -1)];
 		assert_eq!(actual, neighbours);
+	}
+	#[test]
+	/// convert axial coords to offset in a FlatTopOddUp grid orienation
+	fn convert_axial_to_offset_odd_up() {
+		let source: (i32, i32) = (-1, -1);
+		let result = axial_to_offset(source, &HexOrientation::FlatTopOddUp);
+		let actual: (i32, i32) = (-1, -1);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert axial coords to offset in a FlatTopOddDown grid orienation
+	fn convert_axial_to_offset_odd_down() {
+		let source: (i32, i32) = (-1, -1);
+		let result = axial_to_offset(source, &HexOrientation::FlatTopOddDown);
+		let actual: (i32, i32) = (-1, -2);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert cubic coords to offset in a FlatTopOddUp grid orientation
+	fn convert_cubic_to_offset_odd_up() {
+		let source: (i32, i32, i32) = (-2, 3, -1);
+		let result = cubic_to_offset(source, &HexOrientation::FlatTopOddUp);
+		let actual: (i32, i32) = (-2, -2);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert cubic coords to offset in a FlatTopOddDown grid orientation
+	fn convert_cubic_to_offset_odd_downp() {
+		let source: (i32, i32, i32) = (-1, 1, 0);
+		let result = cubic_to_offset(source, &HexOrientation::FlatTopOddDown);
+		let actual: (i32, i32) = (-1, -1);
+		assert_eq!(actual, result);
 	}
 }
