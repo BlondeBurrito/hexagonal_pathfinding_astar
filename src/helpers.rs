@@ -514,10 +514,7 @@ pub fn node_neighbours_axial(source: (i32, i32), count_rings_from_origin: i32) -
 ///                   \         /
 ///                    \_______/
 /// ```
-pub fn node_ring_cubic(
-	source: (i32, i32, i32),
-	radius: i32,
-) -> Vec<(i32, i32, i32)> {
+pub fn node_ring_cubic(source: (i32, i32, i32), radius: i32) -> Vec<(i32, i32, i32)> {
 	let mut ring_nodes = Vec::new();
 	// unit lengths to move in a direction of a face, the array starts with the North direction
 	// moving clockwise for each edge
@@ -528,7 +525,14 @@ pub fn node_ring_cubic(
 	// SW \         / SE
 	//     \_______/
 	//         S
-	let cube_directions = [(0,1,-1), (1, 0, -1), (1, -1, 0), (0, -1, 1), (-1, 0, 1), (-1, 1, 0)];
+	let cube_directions = [
+		(0, 1, -1),
+		(1, 0, -1),
+		(1, -1, 0),
+		(0, -1, 1),
+		(-1, 0, 1),
+		(-1, 1, 0),
+	];
 	// from the starting node move to the node joining the south-west and west faces, e.g for radius =2:
 	//                            _________
 	//                           /         \
@@ -564,7 +568,11 @@ pub fn node_ring_cubic(
 	let scaled_x = cube_directions[4].0 * radius;
 	let scaled_y = cube_directions[4].1 * radius;
 	let scaled_z = cube_directions[4].2 * radius;
-	let mut ring_node_current = (source.0 + scaled_x, source.1 + scaled_y, source.2 + scaled_z);
+	let mut ring_node_current = (
+		source.0 + scaled_x,
+		source.1 + scaled_y,
+		source.2 + scaled_z,
+	);
 	// from the node starting on the ring we can walk around the ring discovering all the nodes on it
 	// iterate to 6 as a hexagon has 6 faces, we walk along each side of the hex ring
 	for i in 0..6 {
@@ -914,10 +922,23 @@ mod tests {
 	#[test]
 	/// test for node on a ring
 	fn ring() {
-		let source = (0,0,0);
+		let source = (0, 0, 0);
 		let radius = 2;
 		let result = node_ring_cubic(source, radius);
-		let actual = vec![(-2,1,1),(-2,2,0),(-1,2,-1),(0,2,-2),(1,1,-2),(2,0,-2),(2,-1,-1),(2,-2,0),(1,-2,1),(0,-2,2),(-1,-1,2),(-2,0,2)];
+		let actual = vec![
+			(-2, 1, 1),
+			(-2, 2, 0),
+			(-1, 2, -1),
+			(0, 2, -2),
+			(1, 1, -2),
+			(2, 0, -2),
+			(2, -1, -1),
+			(2, -2, 0),
+			(1, -2, 1),
+			(0, -2, 2),
+			(-1, -1, 2),
+			(-2, 0, 2),
+		];
 		assert_eq!(actual, result);
 	}
 }
