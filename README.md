@@ -267,8 +267,7 @@ Additionally with a cubic arrangement there's a helper function for finding the 
 ```rust
 pub fn node_ring_cubic(
     source: (i32, i32, i32),
-    ring_number: i32,
-    count_rings_from_origin: i32,
+    radius: i32,
 ) -> Vec<(i32, i32, i32)> {
 ```
 
