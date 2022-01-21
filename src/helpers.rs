@@ -181,13 +181,13 @@ pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) ->
 	match orientation {
 		HexOrientation::FlatTopOddUp => {
 			let x: i32 = node_coords.0;
-			let z: i32 = node_coords.1 - (node_coords.0 - (node_coords.0 & 1)) / 2;
+			let z: i32 = node_coords.1 - (node_coords.0 + (node_coords.0 & 1)) / 2;
 			let y: i32 = -x - z;
 			(x, y, z)
 		}
 		HexOrientation::FlatTopOddDown => {
 			let x: i32 = node_coords.0;
-			let z: i32 = node_coords.1 - (node_coords.0 + (node_coords.0 & 1)) / 2;
+			let z: i32 = node_coords.1 - (node_coords.0 - (node_coords.0 & 1)) / 2;
 			let y: i32 = -x - z;
 			(x, y, z)
 		}
@@ -983,6 +983,22 @@ mod tests {
 			(-2, -1, 3),
 			(-3, 0, 3),
 		];
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// Validate offset to cubic conversion in flat topped odd up orientation
+	fn convert_offset_to_cubic_flat_top_odd_up() {
+		let source: (i32, i32) = (9, 9);
+		let result = offset_to_cubic(source, &HexOrientation::FlatTopOddUp);
+		let actual: (i32, i32, i32) = (9, -13, 4);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// Validate offset to cubic conversion in flat topped odd down orientation
+	fn convert_offset_to_cubic_flat_top_odd_down() {
+		let source: (i32, i32) = (9, 9);
+		let result = offset_to_cubic(source, &HexOrientation::FlatTopOddDown);
+		let actual: (i32, i32, i32) = (9, -14, 5);
 		assert_eq!(actual, result);
 	}
 }
