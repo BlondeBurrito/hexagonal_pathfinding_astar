@@ -920,8 +920,24 @@ mod tests {
 		assert_eq!(actual, result);
 	}
 	#[test]
-	/// test for node on a ring
-	fn ring() {
+	/// test for nodes on ring 1
+	fn ring_1() {
+		let source = (0, 0, 0);
+		let radius = 1;
+		let result = node_ring_cubic(source, radius);
+		let actual = vec![
+			(-1, 1, 0),
+			(0, 1, -1),
+			(1, 0, -1),
+			(1, -1, 0),
+			(0, -1, 1),
+			(-1, 0, 1),
+		];
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// test for nodes on ring 2
+	fn ring_2() {
 		let source = (0, 0, 0);
 		let radius = 2;
 		let result = node_ring_cubic(source, radius);
@@ -938,6 +954,34 @@ mod tests {
 			(0, -2, 2),
 			(-1, -1, 2),
 			(-2, 0, 2),
+		];
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// test for nodes on ring 3
+	fn ring_3() {
+		let source = (0, 0, 0);
+		let radius = 3;
+		let result = node_ring_cubic(source, radius);
+		let actual = vec![
+			(-3, 1, 2),
+			(-3, 2, 1),
+			(-3, 3, 0),
+			(-2, 3, -1),
+			(-1, 3, -2),
+			(0, 3, -3),
+			(1, 2, -3),
+			(2, 1, -3),
+			(3, 0, -3),
+			(3, -1, -2),
+			(3, -2, -1),
+			(3, -3, 0),
+			(2, -3, 1),
+			(1, -3, 2),
+			(0, -3, 3),
+			(-1, -2, 3),
+			(-2, -1, 3),
+			(-3, 0, 3),
 		];
 		assert_eq!(actual, result);
 	}
