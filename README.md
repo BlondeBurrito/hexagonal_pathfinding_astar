@@ -118,31 +118,31 @@ Diagrammatically we can show a grid with `complexity` as `C`, with `weights` as 
                              /    0    \
                             /           \
                   _________/     C:1     \_________
-                 /   -1    \     W:2  -2 /    1    \
+                 /   -1    \     W:2   2 /    1    \
                 /           \           /           \
       _________/     C:2     \_________/     C:14    \_________
-     /   -2    \     W:3  -1 /    0    \     W:1  -2 /    2    \
+     /   -2    \     W:3   2 /    0    \     W:1   1 /    2    \
     /           \           /           \           /   🔴E     \
    /     C:1     \_________/     C:1     \_________/     C:1     \
-   \     W:4   0 /   -1    \     W:2  -1 /    1    \     W:0  -2 /
+   \     W:4   2 /   -1    \     W:2   1 /    1    \     W:0   0 /
     \           /           \           /           \           /
      \_________/     C:7     \_________/     C:15    \_________/
-     /   -2    \     W:3   0 /    0    \     W:1  -1 /    2    \
+     /   -2    \     W:3   1 /    0    \     W:1   0 /    2    \
     /           \           /    🟩S    \           /           \
    /     C:8     \_________/     C:1     \_________/     C:1     \
    \     W:4   1 /   -1    \     W:2   0 /    1    \     W:1  -1 /
     \           /           \           /           \           /
      \_________/     C:6     \_________/     C:14    \_________/
-     /   -2    \     W:3   1 /    0    \     W:2   0 /    2    \
+     /   -2    \     W:3   0 /    0    \     W:2  -1 /    2    \
     /           \           /           \           /           \
    /     C:1     \_________/     C:2     \_________/     C:1     \
-   \     W:4   2 /   -1    \     W:3   1 /    1    \     W:2   0 /
+   \     W:4   0 /   -1    \     W:3  -1 /    1    \     W:2  -2 /
     \           /           \           /           \           /
      \_________/     C:3     \_________/     C:1     \_________/
-               \     W:4   2 /    0    \     W:3   1 /
+               \     W:4  -1 /    0    \     W:3  -2 /
                 \           /           \           /
                  \_________/     C:1     \_________/
-                           \     W:4   2 /
+                           \     W:4  -2 /
                             \           /
                              \_________/
 ```
@@ -156,7 +156,7 @@ Moving from `S` to `E` with the Axial implementation reveals the best path to be
                           /    2    \
                          /   🔴E     \
                         /     C:1     \
-                        \     W:0  -2 /
+                        \     W:0   0 /
                          \           /
    _________              \_________/
   /    0    \             /    2    \
@@ -168,10 +168,10 @@ Moving from `S` to `E` with the Axial implementation reveals the best path to be
   /    0    \             /    2    \
  /           \           /           \
 /     C:2     \_________/     C:1     \
-\     W:3   1 /    1    \     W:2   0 /
+\     W:3  -1 /    1    \     W:2  -2 /
  \           /           \           /
   \_________/     C:1     \_________/
-            \     W:3   1 /
+            \     W:3  -2 /
              \           /
               \_________/
 ```
@@ -188,27 +188,27 @@ Axial coordinates use the convention of `q` for column and `r` for row. In the e
              _______
             /   0   \
     _______/         \_______
-   /  -1   \      -1 /   1   \
+   /  -1   \       1 /   1   \
   /         \_______/         \
-  \       0 /   q   \      -1 /
+  \       1 /   q   \       0 /
    \_______/         \_______/
    /  -1   \       r /   1   \
   /         \_______/         \
-  \       1 /   0   \       0 /
+  \       0 /   0   \      -1 /
    \_______/         \_______/
-           \       1 /
+           \      -1 /
             \_______/
 ```
 
 Finding a nodes neighbours in this alignment is rather simple, for a given node at `(q, r)` beginnning `north` and moving clockwise:
 
 ```txt
-north      = (q, r - 1)
-north-east = (q + 1, r - 1)
-south-east = (q + 1, r)
-south      = (q, r + 1)
-south-west = (q - 1, r + 1)
-north-west = (q - 1, r)
+north      = (q, r + 1)
+north-east = (q + 1, r)
+south-east = (q + 1, r - 1)
+south      = (q, r - 1)
+south-west = (q - 1, r)
+north-west = (q - 1, r + 1)
 ```
 
 Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
@@ -230,27 +230,27 @@ A Cubic grid is structured such:
              _______
             /   0   \
     _______/         \_______
-   /  -1   \ 1    -1 /   1   \
+   /  -1   \ -1    1 /   1   \
   /         \_______/         \
-  \ 1     0 /   x   \ 0    -1 /
+  \ 0     1 /   x   \ -1    0 /
    \_______/         \_______/
    /  -1   \ y     z /   1   \
   /         \_______/         \
-  \ 0     1 /   0   \ -1    0 /
+  \ 1     0 /   0   \ 0    -1 /
    \_______/         \_______/
-           \ -1    1 /
+           \ 1    -1 /
             \_______/
 ```
 
 To find a nodes neighbours from `(x, y, z)` starting `north` and moving clockwise:
 
 ```txt
-north      = (x, y + 1, z - 1)
-north-east = (x + 1, y, z - 1)
-south-east = (x + 1, y - 1, z)
-south      = (x, y - 1, z + 1)
-south-west = (x - 1, y, z + 1)
-north-west = (x - 1, y + 1, z)
+north      = (x, y - 1, z + 1)
+north-east = (x + 1, y - 1, z)
+south-east = (x + 1, y, z - 1)
+south      = (x, y + 1, z - 1)
+south-west = (x - 1, y + 1, z)
+north-west = (x - 1, y, z + 1)
 ```
 
 Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:

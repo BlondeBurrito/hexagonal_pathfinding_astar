@@ -9,27 +9,27 @@
 //!              _______
 //!             /   0   \
 //!     _______/         \_______
-//!    /  -1   \      -1 /   1   \
+//!    /  -1   \       1 /   1   \
 //!   /         \_______/         \
-//!   \       0 /   q   \      -1 /
+//!   \       1 /   q   \       0 /
 //!    \_______/         \_______/
 //!    /  -1   \       r /   1   \
 //!   /         \_______/         \
-//!   \       1 /   0   \       0 /
+//!   \       0 /   0   \      -1 /
 //!    \_______/         \_______/
-//!            \       1 /
+//!            \      -1 /
 //!             \_______/
 //! ```
 //!
 //! Finding a nodes neighbours in this alignment is rather simple, for a given node at `(q, r)` beginnning `north` and moving clockwise:
 //!
 //! ```txt
-//! north      = (q, r - 1)
-//! north-east = (q + 1, r - 1)
-//! south-east = (q + 1, r)
-//! south      = (q, r + 1)
-//! south-west = (q - 1, r + 1)
-//! north-west = (q - 1, r)
+//! north      = (q, r + 1)
+//! north-east = (q + 1, r)
+//! south-east = (q + 1, r - 1)
+//! south      = (q, r - 1)
+//! south-west = (q - 1, r)
+//! north-west = (q - 1, r + 1)
 //! ```
 //!
 //! Programmatically these can be found with the helper function `node_neighbours_axial()`.
@@ -42,27 +42,27 @@
 //!              _______
 //!             /   0   \
 //!     _______/         \_______
-//!    /  -1   \ 1    -1 /   1   \
+//!    /  -1   \ -1    1 /   1   \
 //!   /         \_______/         \
-//!   \ 1     0 /   x   \ 0    -1 /
+//!   \ 0     1 /   x   \ -1    0 /
 //!    \_______/         \_______/
 //!    /  -1   \ y     z /   1   \
 //!   /         \_______/         \
-//!   \ 0     1 /   0   \ -1    0 /
+//!   \ 1     0 /   0   \ 0    -1 /
 //!    \_______/         \_______/
-//!            \ -1    1 /
+//!            \ 1    -1 /
 //!             \_______/
 //! ```
 //!
 //!To find a nodes neighbours from `(x, y, z)` starting `north` and moving clockwise:
 //!
 //! ```txt
-//! north      = (x, y + 1, z - 1)
-//! north-east = (x + 1, y, z - 1)
-//! south-east = (x + 1, y - 1, z)
-//! south      = (x, y - 1, z + 1)
-//! south-west = (x - 1, y, z + 1)
-//! north-west = (x - 1, y + 1, z)
+//! north      = (x, y - 1, z + 1)
+//! north-east = (x + 1, y - 1, z)
+//! south-east = (x + 1, y, z - 1)
+//! south      = (x, y + 1, z - 1)
+//! south-west = (x - 1, y + 1, z)
+//! north-west = (x - 1, y, z + 1)
 //! ```
 //!
 //! Programmatically these can be found with the public helper function `node_neighbours_cubic()`.
@@ -219,6 +219,17 @@ pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) ->
 }
 /// Convert a node with Axial coordinates to Cubic coordinates. `node_coords` is of the form
 /// `(q, r)` where `q` is the column and `r` the row
+/// ```text
+///   _______                  _______            
+///  /   0   \                /   0   \           
+/// /         \_______       /         \_______   
+/// \       1 /   1   \      \ -1    1 /   1   \  
+///  \_______/         \      \_______/         \
+///  /   q   \       0 /      /   x   \ -1    0 /
+/// /         \_______/      /         \_______/  
+/// \       r /              \ y     z /          
+///  \_______/                \_______/           
+/// ```
 pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	let x = node_coords.0;
 	let z = node_coords.1;
@@ -226,17 +237,43 @@ pub fn axial_to_cubic(node_coords: (i32, i32)) -> (i32, i32, i32) {
 	(x, y, z)
 }
 /// Convert a node with Axial coordinates to Offset coordinates based on an orientation. `node_coords` is of the form
-/// `(q, r)` where `q` is the column and `r` the row
+/// `(q, r)` where `q` is the column and `r` the row.
+/// FlatTopOddUp:
+/// ```text
+///            _______                  _______
+///           /   1   \                /       \
+///   _______/         \       _______/   1,1   \
+///  /   0   \       1 /      /       \         /
+/// /         \_______/      /   0,1   \_______/  
+/// \       1 /   1   \      \         /       \  
+///  \_______/         \      \_______/   1,0   \
+///  /   q   \       0 /      /       \         /
+/// /         \_______/      /   x,y   \_______/  
+/// \       r /              \         /          
+///  \_______/                \_______/           
+/// ```
+/// FlatTopOddDown:
+/// ```text
+///            _______                           _______
+///           /   1   \                         /       \
+///   _______/         \_______         _______/   1,1   \_______
+///  /   q   \       0 /   2   \       /       \         /       \
+/// /         \_______/         \     /   x,y   \_______/   2,0   \
+/// \       r /   1   \      -1 /     \         /       \         /
+///  \_______/         \_______/       \_______/   1,0   \_______/
+///          \      -1 /                       \         /
+///           \_______/                         \_______/
+/// ```
 pub fn axial_to_offset(node_coords: (i32, i32), orientation: &HexOrientation) -> (i32, i32) {
 	match orientation {
 		HexOrientation::FlatTopOddUp => {
 			let x: i32 = node_coords.0;
-			let y: i32 = node_coords.1 + (node_coords.0 + (node_coords.0 & 1)) / 2;
+			let y: i32 = node_coords.1 + (node_coords.0 - (node_coords.0 & 1)) / 2;
 			(x, y)
 		}
 		HexOrientation::FlatTopOddDown => {
 			let x: i32 = node_coords.0;
-			let y: i32 = node_coords.1 + (node_coords.0 - (node_coords.0 & 1)) / 2;
+			let y: i32 = node_coords.1 + (node_coords.0 + (node_coords.0 & 1)) / 2;
 			(x, y)
 		}
 	}
@@ -449,15 +486,15 @@ pub fn node_neighbours_offset(
 ///              _______
 ///             /   0   \
 ///     _______/         \_______
-///    /  -1   \ 1    -1 /   1   \
+///    /  -1   \ -1    1 /   1   \
 ///   /         \_______/         \
-///   \ 1     0 /   x   \ 0    -1 /
+///   \ 0     1 /   x   \ -1    0 /
 ///    \_______/         \_______/
 ///    /  -1   \ y     z /   1   \
 ///   /         \_______/         \
-///   \ 0     1 /   0   \ -1    0 /
+///   \ 1     0 /   0   \ 0    -1 /
 ///    \_______/         \_______/
-///            \ -1    1 /
+///            \ 1    -1 /
 ///             \_______/
 /// ```
 /// Will have a `count_rings_from_origin` of 1 preventing returning non existent nodes.
@@ -467,41 +504,41 @@ pub fn node_neighbours_cubic(
 	count_rings_from_origin: i32,
 ) -> Vec<(i32, i32, i32)> {
 	let mut neighbours = Vec::new();
-	// north (x, y + 1, z - 1)
-	if (source.1 + 1).abs() <= count_rings_from_origin
-		&& (source.2 - 1).abs() <= count_rings_from_origin
-	{
-		neighbours.push((source.0, source.1 + 1, source.2 - 1))
-	}
-	// north-east (x + 1, y, z - 1)
-	if (source.0 + 1).abs() <= count_rings_from_origin
-		&& (source.2 - 1).abs() <= count_rings_from_origin
-	{
-		neighbours.push((source.0 + 1, source.1, source.2 - 1))
-	}
-	// south-east (x + 1, y - 1, z)
-	if (source.0 + 1).abs() <= count_rings_from_origin
-		&& (source.1 - 1).abs() <= count_rings_from_origin
-	{
-		neighbours.push((source.0 + 1, source.1 - 1, source.2))
-	}
-	// south (x, y - 1, z + 1)
+	// north (x, y - 1, z + 1)
 	if (source.1 - 1).abs() <= count_rings_from_origin
 		&& (source.2 + 1).abs() <= count_rings_from_origin
 	{
 		neighbours.push((source.0, source.1 - 1, source.2 + 1))
 	}
-	// south-west (x - 1, y, z + 1)
-	if (source.0 - 1).abs() <= count_rings_from_origin
-		&& (source.2 + 1).abs() <= count_rings_from_origin
+	// north-east (x + 1, y - 1, z)
+	if (source.0 + 1).abs() <= count_rings_from_origin
+		&& (source.1 - 1).abs() <= count_rings_from_origin
 	{
-		neighbours.push((source.0 - 1, source.1, source.2 + 1))
+		neighbours.push((source.0 + 1, source.1 - 1, source.2))
 	}
-	// north-west (x - 1, y + 1, z)
+	// south-east (x + 1, y, z - 1)
+	if (source.0 + 1).abs() <= count_rings_from_origin
+		&& (source.2 - 1).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 + 1, source.1, source.2 - 1))
+	}
+	// south (x, y + 1, z - 1)
+	if (source.1 + 1).abs() <= count_rings_from_origin
+		&& (source.2 - 1).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0, source.1 + 1, source.2 - 1))
+	}
+	// south-west (x - 1, y + 1, z)
 	if (source.0 - 1).abs() <= count_rings_from_origin
 		&& (source.1 + 1).abs() <= count_rings_from_origin
 	{
 		neighbours.push((source.0 - 1, source.1 + 1, source.2))
+	}
+	// north-west (x - 1, y, z + 1)
+	if (source.0 - 1).abs() <= count_rings_from_origin
+		&& (source.2 + 1).abs() <= count_rings_from_origin
+	{
+		neighbours.push((source.0 - 1, source.1, source.2 + 1))
 	}
 	neighbours
 }
@@ -515,15 +552,15 @@ pub fn node_neighbours_cubic(
 ///              _______
 ///             /   0   \
 ///     _______/         \_______
-///    /  -1   \      -1 /   1   \
+///    /  -1   \       1 /   1   \
 ///   /         \_______/         \
-///   \       0 /   q   \      -1 /
+///   \       1 /   q   \       0 /
 ///    \_______/         \_______/
 ///    /  -1   \       r /   1   \
 ///   /         \_______/         \
-///   \       1 /   0   \       0 /
+///   \       0 /   0   \      -1 /
 ///    \_______/         \_______/
-///            \       1 /
+///            \      -1 /
 ///             \_______/
 /// ```
 /// Only has 1 ring of nodes around the origin so the count is 1.
@@ -576,12 +613,12 @@ pub fn node_ring_cubic(source: (i32, i32, i32), radius: i32) -> Vec<(i32, i32, i
 	//     \_______/
 	//         S
 	let cube_directions = [
-		(0, 1, -1),
-		(1, 0, -1),
-		(1, -1, 0),
 		(0, -1, 1),
-		(-1, 0, 1),
+		(1, -1, 0),
+		(1, 0, -1),
+		(0, 1, -1),
 		(-1, 1, 0),
+		(-1, 0, 1),
 	];
 	// from the starting node move to the node joining the south-west and west faces, e.g for radius =2:
 	//                            _________
@@ -904,7 +941,7 @@ mod tests {
 	fn axial_neighbours() {
 		let source: (i32, i32) = (2, -1);
 		let neighbours = node_neighbours_axial(source, 3);
-		let actual = vec![(2, -2), (3, -2), (3, -1), (2, 0), (1, 0), (1, -1)];
+		let actual = vec![(2, 0), (3, -1), (3, -2), (2, -2), (1, -1), (1, 0)];
 		assert_eq!(actual, neighbours);
 	}
 	#[test]
@@ -912,7 +949,7 @@ mod tests {
 	fn axial_neighbours_with_boundary() {
 		let source: (i32, i32) = (-1, -1);
 		let neighbours = node_neighbours_axial(source, 2);
-		let actual = vec![(0, -2), (0, -1), (-1, 0), (-2, 0)];
+		let actual = vec![(-1, 0), (0, -1), (0, -2), (-2, 0)];
 		assert_eq!(actual, neighbours);
 	}
 	#[test]
@@ -921,12 +958,12 @@ mod tests {
 		let source: (i32, i32, i32) = (2, -1, -1);
 		let neighbours = node_neighbours_cubic(source, 3);
 		let actual = vec![
-			(2, 0, -2),
-			(3, -1, -2),
-			(3, -2, -1),
 			(2, -2, 0),
-			(1, -1, 0),
+			(3, -2, -1),
+			(3, -1, -2),
+			(2, 0, -2),
 			(1, 0, -1),
+			(1, -1, 0),
 		];
 		assert_eq!(actual, neighbours);
 	}
@@ -935,7 +972,7 @@ mod tests {
 	fn cubic_neighbours_with_boundary() {
 		let source: (i32, i32, i32) = (2, -1, -1);
 		let neighbours = node_neighbours_cubic(source, 2);
-		let actual = vec![(2, 0, -2), (2, -2, 0), (1, -1, 0), (1, 0, -1)];
+		let actual = vec![(2, -2, 0), (2, 0, -2), (1, 0, -1), (1, -1, 0)];
 		assert_eq!(actual, neighbours);
 	}
 	#[test]
@@ -943,7 +980,7 @@ mod tests {
 	fn convert_axial_to_offset_odd_up() {
 		let source: (i32, i32) = (-1, -1);
 		let result = axial_to_offset(source, &HexOrientation::FlatTopOddUp);
-		let actual: (i32, i32) = (-1, -1);
+		let actual: (i32, i32) = (-1, -2);
 		assert_eq!(actual, result);
 	}
 	#[test]
@@ -951,7 +988,7 @@ mod tests {
 	fn convert_axial_to_offset_odd_down() {
 		let source: (i32, i32) = (-1, -1);
 		let result = axial_to_offset(source, &HexOrientation::FlatTopOddDown);
-		let actual: (i32, i32) = (-1, -2);
+		let actual: (i32, i32) = (-1, -1);
 		assert_eq!(actual, result);
 	}
 	#[test]
@@ -985,12 +1022,12 @@ mod tests {
 		let radius = 1;
 		let result = node_ring_cubic(source, radius);
 		let actual = vec![
-			(-1, 1, 0),
-			(0, 1, -1),
-			(1, 0, -1),
-			(1, -1, 0),
-			(0, -1, 1),
 			(-1, 0, 1),
+			(0, -1, 1),
+			(1, -1, 0),
+			(1, 0, -1),
+			(0, 1, -1),
+			(-1, 1, 0),
 		];
 		assert_eq!(actual, result);
 	}
@@ -1002,17 +1039,17 @@ mod tests {
 		let result = node_ring_cubic(source, radius);
 		let actual = vec![
 			(-2, 1, 1),
-			(-2, 2, 0),
-			(-1, 2, -1),
-			(0, 2, -2),
-			(1, 1, -2),
-			(2, 0, -2),
-			(2, -1, -1),
-			(2, -2, 0),
-			(1, -2, 1),
-			(0, -2, 2),
-			(-1, -1, 2),
 			(-2, 0, 2),
+			(-1, -1, 2),
+			(0, -2, 2),
+			(1, -2, 1),
+			(2, -2, 0),
+			(2, -1, -1),
+			(2, 0, -2),
+			(1, 1, -2),
+			(0, 2, -2),
+			(-1, 2, -1),
+			(-2, 2, 0),
 		];
 		assert_eq!(actual, result);
 	}
@@ -1023,24 +1060,24 @@ mod tests {
 		let radius = 3;
 		let result = node_ring_cubic(source, radius);
 		let actual = vec![
-			(-3, 1, 2),
 			(-3, 2, 1),
-			(-3, 3, 0),
-			(-2, 3, -1),
-			(-1, 3, -2),
-			(0, 3, -3),
-			(1, 2, -3),
-			(2, 1, -3),
-			(3, 0, -3),
-			(3, -1, -2),
-			(3, -2, -1),
-			(3, -3, 0),
-			(2, -3, 1),
-			(1, -3, 2),
-			(0, -3, 3),
-			(-1, -2, 3),
-			(-2, -1, 3),
+			(-3, 1, 2),
 			(-3, 0, 3),
+			(-2, -1, 3),
+			(-1, -2, 3),
+			(0, -3, 3),
+			(1, -3, 2),
+			(2, -3, 1),
+			(3, -3, 0),
+			(3, -2, -1),
+			(3, -1, -2),
+			(3, 0, -3),
+			(2, 1, -3),
+			(1, 2, -3),
+			(0, 3, -3),
+			(-1, 3, -2),
+			(-2, 3, -1),
+			(-3, 3, 0),
 		];
 		assert_eq!(actual, result);
 	}
@@ -1051,24 +1088,24 @@ mod tests {
 		let radius = 3;
 		let result = node_ring_cubic(source, radius);
 		let actual = vec![
-			(6, -13, 7),
 			(6, -12, 6),
-			(6, -11, 5),
-			(7, -11, 4),
-			(8, -11, 3),
-			(9, -11, 2),
-			(10, -12, 2),
-			(11, -13, 2),
-			(12, -14, 2),
-			(12, -15, 3),
-			(12, -16, 4),
-			(12, -17, 5),
-			(11, -17, 6),
-			(10, -17, 7),
-			(9, -17, 8),
-			(8, -16, 8),
-			(7, -15, 8),
+			(6, -13, 7),
 			(6, -14, 8),
+			(7, -15, 8),
+			(8, -16, 8),
+			(9, -17, 8),
+			(10, -17, 7),
+			(11, -17, 6),
+			(12, -17, 5),
+			(12, -16, 4),
+			(12, -15, 3),
+			(12, -14, 2),
+			(11, -13, 2),
+			(10, -12, 2),
+			(9, -11, 2),
+			(8, -11, 3),
+			(7, -11, 4),
+			(6, -11, 5),
 		];
 		assert_eq!(actual, result);
 	}
