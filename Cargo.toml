@@ -1,7 +1,7 @@
 [package]
 name = "hexagonal_pathfinding_astar"
-version = "0.9.0"
-rust-version = "1.58"
+version = "1.0.0"
+rust-version = "1.59"
 authors = ["BlondeBurrito"]
 edition = "2021"
 description = "A-Star pathfinding algorithm tailored for traversing a bespoke collection of weighted hexagons"

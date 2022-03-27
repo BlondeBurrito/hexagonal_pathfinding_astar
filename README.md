@@ -37,7 +37,7 @@ I've created it as I'm currently building a game using the [Bevy](https://github
 
 Limitations:
 
-* Keep node positions smaller than `i32::MAX/2` and greater than `i32::MIN/2` otherwise bad things might happen
+* Keep node positions smaller than `i32::MAX/2` and greater than `i32::MIN/2` otherwise bad things might happen with overflow and you won't get a path that makes sense/works
 
 Table of contents
 
@@ -49,6 +49,8 @@ Table of contents
     1. [Offset Coordinates](#offset)
         1. [Flat Topped - odd columns shifted up](#ftou)
         1. [Flat Topped - odd columns shifted down](#ftod)
+        1. [Pointy Top - odd rows shifted right](#ptor)
+        1. [Pointy Top - odd rows shifted left](#ptol)
 4. [What Coordinate System Should You Use?](#wcssyyu)
 5. [How to use](#howto)
 
@@ -82,7 +84,7 @@ We then consider the alternate route of moving from `S` to `O2`:
 * The distance between `S` and `O2` is `5`
 * The A-Star score is therefore `5 + 1 = 6`
 
-We can see that currently the most optimal route is to move from `S` to `O2` - as moving to `O2` has a better A-Star score we interrogate this point first.
+We can see that currently the most optimal route is to move from `S` to `O2` (it has a lower A-Star score) - as moving to `O2` has a better A-Star score we interrogate this point first.
 
 From `O2` we discover that we can traverse to `E`:
 
@@ -107,7 +109,7 @@ The idea is that for a large number of points and paths certain routes will not 
 
 Traditional A-Star uses `distance` and `weight` (normally called a heuristic) to determine an optimal path, this encourages it to seek a path to a single end point as efficiently as possbile. The weight being a measurement between a point and end goal. Distances can vary enourmously.
 
-For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added a new heuristic called 'complexity' which is the difficulty of traversing a hexagon where a high complexity indicates an expensive path to travel. It is critical to note that movement is based on moving from the center of one hexagon to another, meaning that complexity of movement is based on half of the starting hexagons complexity value plus half the complexity of the target hexagons complexity value.
+For this hexagonal arrangemnt each hexagon maintains a heuristic called weight which guides the algorithm but distance is static, each hexagon has the same width. Instead I've added a new heuristic called `complexity` which is the difficulty of traversing a hexagon where a high complexity indicates an expensive path to travel. It is critical to note that movement is based on moving from the center of one hexagon to another, meaning that complexity of movement is based on half of the starting hexagons complexity value plus half the complexity of the target hexagons complexity value.
 
 Weight is a linear measure of how far away a hexagon is from the end point/hexagon and is calculated within the library rather than being supplied - it is effecitvely the number of jumps you'd have to make going from `hex-Current` to `hex-End`.
 
@@ -147,7 +149,9 @@ Diagrammatically we can show a grid with `complexity` as `C`, with `weights` as 
                              \_________/
 ```
 
-The complexity of movement between node `S`, `(0, 0)`, and the node immediately to its south, `(0, 1)` is the sum of the half complexities, ie `(1 * 0.5) + (2 * 0.5) = 1.5`. These half values are what the algorithm uses within its A-Star calculations to simulate center to center movement.
+You'll see that in-library calculated weights create a wavefront around `E` which increases the further out you are. This helps guide the algorithm when there is little difference between the complexities of two neighbouring nodes.
+
+The complexity of movement between node `S`, `(0, 0)`, and the node immediately to its south, `(0, -1)` is the sum of the half complexities, ie `(1 * 0.5) + (2 * 0.5) = 1.5`. These half values are what the algorithm uses within its A-Star calculations to simulate center to center movement over a boundary of some kind (like walking over a field and then up a hill).
 
 Moving from `S` to `E` with the Axial implementation reveals the best path to be:
 
@@ -178,11 +182,11 @@ Moving from `S` to `E` with the Axial implementation reveals the best path to be
 
 ## Hexagon Grids and  Orientation <a name="orientation"></a>
 
-There are different ways in which a hexagon grid can be portrayed which in turn affects the discoverable neighbouring hexagons for path traversal.
+There are different ways in which a hexagon grid can be portrayed which in turn affects the discoverable neighbouring hexagons for path traversal - hexagon discovery is crucial to this algorithm, it needs to poke around directions it can go and give them a score.
 
 ### Axial Coordinates <a name="axial"></a>
 
-Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy tops are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 30 degrees making `r` horizontal and `q` diagonal.
+Axial coordinates use the convention of `q` for column and `r` for row. In the example below the `r` is a diagonal row. For hexagon layouts where the pointy bits are facing up the calculations remain exactly the same as you're effectively just rotating the grid by 30 degrees making `r` horizontal and `q` diagonal.
 
 ```txt
              _______
@@ -211,7 +215,7 @@ south-west = (q - 1, r)
 north-west = (q - 1, r + 1)
 ```
 
-Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
+Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin (the boundary ensures you're not discovering nodes outside your grid area):
 
 ```rust
 pub fn node_neighbours_axial(
@@ -253,7 +257,7 @@ south-west = (x - 1, y + 1, z)
 north-west = (x - 1, y, z + 1)
 ```
 
-Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin:
+Programmatically these can be found with a public helper function where the grid has a circular boundary denoted by the maximum ring count from the `(0,0)` origin (this ensures you don't return nodes outside of our grid area):
 
 ```rust
 pub fn node_neighbours_cubic(
@@ -262,13 +266,13 @@ pub fn node_neighbours_cubic(
 ) -> Vec<(i32, i32, i32)>
 ```
 
-Additionally with a cubic arrangement there's a helper function for finding the nodes sat on a ring around a given source node:
+Additionally with a cubic arrangement there's a helper function for finding the nodes sat on a ring around a given source node (think of it like a sight radius):
 
 ```rust
 pub fn node_ring_cubic(
     source: (i32, i32, i32),
     radius: i32,
-) -> Vec<(i32, i32, i32)> {
+) -> Vec<(i32, i32, i32)>
 ```
 
 ### Offset Coordinates <a name="offset"></a>
@@ -319,7 +323,7 @@ south-west = (column - 1, row)
 north-west = (column - 1, row + 1)
 ```
 
-Programmatically these can be found with a public helper function where the grid has boundaries in space denoted by the min and max values:
+Programmatically these can be found with a public helper function where the grid has boundaries in space denoted by the min and max values, again these ensure that you're not returning nodes outside of your grid area:
 
 ```rust
 pub fn node_neighbours_offset(
@@ -391,9 +395,73 @@ pub fn node_neighbours_offset(
 
 Where `orientation` must be `HexOrientation::FlatTopOddDown`
 
+#### Pointy Top - odd rows shifted right <a name="ptor"></a>
+
+(Ascii hexagons with pointy tops are very hard to draw so it's time for some MSPaint)
+
+<img src="docs/pointy_top_row_right.png" alt="hex" width="370"/>
+
+The row shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (0,1), we increment the `row` value by one.
+
+However if we take the node (0,1) and wish to discover its North-East node at (1,2) we have to increment both the `column` and `row` values by one.
+
+In full for a node in an even row we can calculate a nodes neighbours thus:
+
+```txt
+north-east = (column, row + 1)
+east       = (column + 1, row)
+south-east = (column, row - 1)
+south-west = (column - 1, row - 1)
+west       = (column -1, row)
+north-west = (column - 1, row + 1)
+```
+
+And for a node in an odd row the node neighbours can be found:
+
+```txt
+north-east = (column + 1, row + 1)
+east       = (column + 1, row)
+south-east = (column + 1, row - 1)
+south-west = (column, row - 1)
+west       = (column -1, row)
+north-west = (column, row + 1)
+```
+
+#### Pointy Top - odd rows shifted left <a name="ptol"></a>
+
+(Ascii hexagons with pointy tops are very hard to draw so it's time for some MSPaint)
+
+<img src="docs/pointy_top_row_left.png" alt="hex" width="370"/>
+
+The row shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and `row` values by one.
+
+However if we take the node (1,1) and wish to discover its North-East node at (1,2) we have to increment only the `row` value by one.
+
+In full for a node in an even row we can calculate a nodes neighbours thus:
+
+```txt
+north-east = (column + 1, row + 1)
+east       = (column + 1, row)
+south-east = (column + 1, row - 1)
+south-west = (column, row - 1)
+west       = (column -1, row)
+north-west = (column, row + 1)
+```
+
+And for a node in an odd row the node neighbours can be found:
+
+```txt
+north-east = (column, row + 1)
+east       = (column + 1, row)
+south-east = (column, row - 1)
+south-west = (column - 1, row - 1)
+west       = (column -1, row)
+north-west = (column - 1, row + 1)
+```
+
 ## What Coordinate System Should You Use? <a name="wcssyyu"></a>
 
-If you're building a square/rectangular grid I'd say the Offset layout is the easiest to begin working with, it is simply just columns and rows on an `x-y` like axes with a little column shifting.
+If you're building a square/rectangular grid I'd say the Offset layout is the easiest to begin working with, it is simply just columns and rows on an `x-y` like axes with a little column/row shifting.
 
 If you're building a circular grid then Axial and Cubic are easily the best as their coordinate systems naturally fit a circular space.
 
@@ -401,16 +469,14 @@ You could use Axial and Cubic for a square/rectangular grid by creating a very l
 
 ## How to use <a name="howto"></a>
 
-TODO: Expand section for each coord system
-
-Offset exmaple.
-
-Cargo.toml
+`Cargo.toml`
 
 ```toml
 [dependencies]
-hexagonal_pathfinding_astar = "0.8"
+hexagonal_pathfinding_astar = "1.0"
 ```
+
+### Offset Exmaple
 
 Part of `xyz.rs`
 
@@ -448,4 +514,39 @@ let orientation = HexOrientation::FlatTopOddUp;
 let best = astar_offset::astar_path(start_node, nodes, end_node, min_column, max_column, min_row, max_row, orientation);
 // answer using above data = [(0,0), (0,1), (0,2), (1,2), (2,3), (3,3)]
 // the manual calculation for this can be found under `docs/calculations_done_manually.md`
+```
+
+### Cubic Example
+
+```rust
+use hexagonal_pathfinding_astar::*;
+// you are here
+let start_node: (i32, i32, i32) = (0, 0, 0);
+// keys are nodes, values are the complexity
+let mut nodes: HashMap<(i32, i32, i32), f32> = HashMap::new();
+nodes.insert((0, 0, 0), 1.0);
+nodes.insert((0, -1, 1), 1.0);
+nodes.insert((1, -1, 0), 15.0);
+nodes.insert((1, 0, -1), 14.0);
+nodes.insert((0, 1, -1), 2.0);
+nodes.insert((-1, 1, 0), 6.0);
+nodes.insert((-1, 0, 1), 7.0);
+nodes.insert((0, -2, 2), 1.0);
+nodes.insert((1, -2, 1), 14.0);
+nodes.insert((2, -2, 0), 1.0);
+nodes.insert((2, -1, -1), 1.0);
+nodes.insert((2, 0, -2), 1.0);
+nodes.insert((1, 1, -2), 1.0);
+nodes.insert((0, 2, -2), 1.0);
+nodes.insert((-1, 2, -1), 3.0);
+nodes.insert((-2, 2, 0), 1.0);
+nodes.insert((-2, 1, 1), 8.0);
+nodes.insert((-2, 0, 2), 1.0);
+nodes.insert((-1, -1, 2), 2.0);
+// you want to go here
+let end_node: (i32, i32, i32) = (2, -2, 0);
+// it's a circular grid with a limited number of rings
+let rings = 2;
+let best = astar_cubic::astar_path(start_node, nodes, end_node, rings);
+// answer = vec![(0, 0, 0),(0, 1, -1),(1, 1, -2),(2, 0, -2),(2, -1, -1),(2, -2, 0)]
 ```

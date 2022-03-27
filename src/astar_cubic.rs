@@ -38,9 +38,9 @@ use core::panic;
 ///
 /// `count_rings` is the number of rings around the origin `(0, 0)` of the circular hexagonal grid. It
 /// is an inclusive value. NB: `count_rings` is NOT the nubmer of rings around the start or end node, it
-/// is explicitly the number of rings around the origin of our hexagon grid
+/// is explicitly the total number of rings around the origin of your hexagon grid
 ///
-/// For instance from our origin of `(0, 0)`:
+/// For instance from our origin of `(0, 0, 0)`:
 ///
 ///```txt
 ///                              _________
@@ -156,10 +156,12 @@ pub fn astar_path(
 		// process each new path
 		for n in available_nodes.iter() {
 			let previous_complexities: f32 = current_path.3;
+			// grab the half complexity of the currrent node
 			let current_node_complexity: f32 = match nodes_weighted.get(&current_path.0) {
 				Some(x) => x.0 * 0.5,
 				None => panic!("Unable to find current node complexity for {:?}", &n),
 			};
+			// grab half the complexity of the neighbour node
 			let target_node_complexity: f32 = match nodes_weighted.get(n) {
 				Some(x) => x.0 * 0.5,
 				None => panic!("Unable to find target node complexity for {:?}", &n),
@@ -202,7 +204,9 @@ pub fn astar_path(
 				}
 			} else {
 				// no record of node and new path required in queue
+				// update the a-star score data
 				node_astar_scores.insert(*n, astar);
+				// update the queue to process through
 				queue.push((*n, astar, previous_nodes_traversed, complexity));
 			}
 		}
@@ -235,14 +239,7 @@ mod tests {
 	use std::collections::HashMap;
 
 	#[test]
-	/// Calcualtes a nodes weight
-	/// ```txt
-	///    _______           _______
-	///   /       \         /       \
-	///  /  (2,2)  \ ----> /  (4,4)  \
-	///  \         /       \         /
-	///   \_______/         \_______/
-	///  ```
+	/// Calcualtes a nodes weight, i.e number of hops to it
 	fn node_weight_down() {
 		let source: (i32, i32, i32) = (0, 0, 0);
 		let end_node: (i32, i32, i32) = (2, -3, 1);
@@ -251,14 +248,7 @@ mod tests {
 		assert_eq!(actual_weight, weight);
 	}
 	#[test]
-	/// Calculates a nodes weight where the end node is located in the -ve x-y direction
-	/// ```txt
-	///    _______           _______
-	///   /       \         /       \
-	///  /  (4,4)  \ ----> /  (2,2)  \
-	///  \         /       \         /
-	///   \_______/         \_______/
-	///  ```
+	/// Calculates a nodes weight where the end node is located towards the origin - helps test correct signs
 	fn node_weight_towards_origin() {
 		let source: (i32, i32, i32) = (-2, -1, 3);
 		let end_node: (i32, i32, i32) = (1, 0, -1);
