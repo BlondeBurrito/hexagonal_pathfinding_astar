@@ -103,6 +103,14 @@
 //!             \_______/
 //! ```
 //!
+//! ### Pointy Topped - odd rows shifted right
+//!
+//! Please refer to the README of the proect for an illustration - ascii hexagons with pointy tops are very hard to draw.
+//!
+//! ### Pointy Topped - odd rows shifted left
+//!
+//! Please refer to the README of the proect for an illustration - ascii hexagons with pointy tops are very hard to draw.
+
 pub mod astar_axial;
 pub mod astar_cubic;
 pub mod astar_offset;
@@ -128,4 +136,6 @@ pub mod helpers;
 pub enum HexOrientation {
 	FlatTopOddUp,
 	FlatTopOddDown,
+	PointyTopOddRight,
+	PointyTopOddLeft,
 }

@@ -173,6 +173,66 @@
 //! Programmatically these can be found with the public helper function `node_neighbours_offset()`
 //! where the grid has boundaries in space denoted by the min and max values and`orientation` must
 //! be `HexOrientation::FlatTopOddDown`
+//!
+//! ### Pointy Top - odd rows shifted right
+//!
+//! Ascii hexagons with pointy tops are very hard to draw, please refer to the README of this proect for diagrams
+//!
+//! The row shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (0,1), we increment the `row` value by one.
+//!
+//! However if we take the node (0,1) and wish to discover its North-East node at (1,2) we have to increment both the `column` and `row` values by one.
+//!
+//! In full for a node in an even row we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north-east = (column, row + 1)
+//! east       = (column + 1, row)
+//! south-east = (column, row - 1)
+//! south-west = (column - 1, row - 1)
+//! west       = (column -1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
+//!
+//! And for a node in an odd row the node neighbours can be found:
+//!
+//! ```txt
+//! north-east = (column + 1, row + 1)
+//! east       = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south-west = (column, row - 1)
+//! west       = (column -1, row)
+//! north-west = (column, row + 1)
+//! ```
+//!
+//! ### Pointy Top - odd rows shifted left
+//!
+//! Ascii hexagons with pointy tops are very hard to draw, please refer to the README of this proect for diagrams
+//!
+//! The row shift changes how we discover nearby nodes. For instance if we take the node at (0,0) and wish to discover the node to its North-East, (1,1), we increment the `column` and `row` values by one.
+//!
+//! However if we take the node (1,1) and wish to discover its North-East node at (1,2) we have to increment only the `row` value by one.
+//!
+//! In full for a node in an even row we can calculate a nodes neighbours thus:
+//!
+//! ```txt
+//! north-east = (column + 1, row + 1)
+//! east       = (column + 1, row)
+//! south-east = (column + 1, row - 1)
+//! south-west = (column, row - 1)
+//! west       = (column -1, row)
+//! north-west = (column, row + 1)
+//! ```
+//!
+//! And for a node in an odd row the node neighbours can be found:
+//!
+//! ```txt
+//! north-east = (column, row + 1)
+//! east       = (column + 1, row)
+//! south-east = (column, row - 1)
+//! south-west = (column - 1, row - 1)
+//! west       = (column -1, row)
+//! north-west = (column - 1, row + 1)
+//! ```
 
 use crate::HexOrientation;
 
@@ -212,6 +272,18 @@ pub fn offset_to_cubic(node_coords: (i32, i32), orientation: &HexOrientation) ->
 		HexOrientation::FlatTopOddDown => {
 			let x: i32 = node_coords.0;
 			let z: i32 = node_coords.1 - (node_coords.0 + (node_coords.0 & 1)) / 2;
+			let y: i32 = -x - z;
+			(x, y, z)
+		}
+		HexOrientation::PointyTopOddRight => {
+			let x: i32 = node_coords.0 - (node_coords.1 - (node_coords.1 & 1)) / 2;
+			let z: i32 = node_coords.1;
+			let y: i32 = -x - z;
+			(x, y, z)
+		}
+		HexOrientation::PointyTopOddLeft => {
+			let x: i32 = node_coords.0 - (node_coords.1 + (node_coords.1 & 1)) / 2;
+			let z: i32 = node_coords.1;
 			let y: i32 = -x - z;
 			(x, y, z)
 		}
@@ -276,6 +348,16 @@ pub fn axial_to_offset(node_coords: (i32, i32), orientation: &HexOrientation) ->
 			let y: i32 = node_coords.1 + (node_coords.0 + (node_coords.0 & 1)) / 2;
 			(x, y)
 		}
+		HexOrientation::PointyTopOddRight => {
+			let x: i32 = node_coords.0 + (node_coords.1 - (node_coords.1 & 1)) / 2;
+			let y: i32 = node_coords.1;
+			(x, y)
+		}
+		HexOrientation::PointyTopOddLeft => {
+			let x: i32 = node_coords.0 + (node_coords.1 + (node_coords.1 & 1)) / 2;
+			let y: i32 = node_coords.1;
+			(x, y)
+		}
 	}
 }
 /// Convert a node with Cubic coordinates to Axial coordinates. `node_coords` is of the form
@@ -325,10 +407,20 @@ pub fn cubic_to_offset(node_coords: (i32, i32, i32), orientation: &HexOrientatio
 			let r: i32 = node_coords.2 + (node_coords.0 + (node_coords.0 & 1)) / 2;
 			(q, r)
 		}
+		HexOrientation::PointyTopOddRight => {
+			let q: i32 = node_coords.0 + (node_coords.2 - (node_coords.2 & 1)) / 2;
+			let r: i32 = node_coords.2;
+			(q, r)
+		}
+		HexOrientation::PointyTopOddLeft => {
+			let q: i32 = node_coords.0 + (node_coords.2 + (node_coords.2 & 1)) / 2;
+			let r: i32 = node_coords.2;
+			(q, r)
+		}
 	}
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
-///  where 'min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
+///  where `min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
 /// are exclusive values. This means that for most source hexagons 6 neighbours will be expanded but
 /// for those lining the boundaries fewer neighrbors will be discovered.
 ///
@@ -470,6 +562,116 @@ pub fn node_neighbours_offset(
 				// north-west
 				if source.0 - 1 > min_column {
 					neighbours.push((source.0 - 1, source.1))
+				}
+			}
+		}
+		// pointy top hexagons with odd rows shifted to the right
+		HexOrientation::PointyTopOddRight => {
+			// even row with BitwiseAND
+			if source.1 & 1 == 0 {
+				// north-east
+				if source.1 + 1 < max_row {
+					neighbours.push((source.0, source.1 + 1))
+				}
+				// east
+				if source.0 + 1 < max_column {
+					neighbours.push((source.0 + 1, source.1))
+				}
+				// south-east
+				if source.1 - 1 > min_row {
+					neighbours.push((source.0, source.1 - 1))
+				}
+				// south-west
+				if source.0 - 1 > min_column && source.1 - 1 > min_row {
+					neighbours.push((source.0 - 1, source.1 - 1))
+				}
+				// west
+				if source.0 - 1 > min_column {
+					neighbours.push((source.0 - 1, source.1))
+				}
+				// north-west
+				if source.0 - 1 > min_column && source.1 + 1 < max_row {
+					neighbours.push((source.0 - 1, source.1 + 1))
+				}
+			} else {
+				// north-east
+				if source.0 + 1 < max_column && source.1 + 1 < max_row {
+					neighbours.push((source.0 + 1, source.1 + 1))
+				}
+				// east
+				if source.0 + 1 < max_column {
+					neighbours.push((source.0 + 1, source.1))
+				}
+				// south-east
+				if source.0 + 1 < max_column && source.1 - 1 > min_row {
+					neighbours.push((source.0 + 1, source.1 - 1))
+				}
+				// south-west
+				if source.1 - 1 > min_row {
+					neighbours.push((source.0, source.1 - 1))
+				}
+				// west
+				if source.0 - 1 > min_column {
+					neighbours.push((source.0 - 1, source.1))
+				}
+				// north-west
+				if source.1 + 1 < max_row {
+					neighbours.push((source.0, source.1 + 1))
+				}
+			}
+		}
+		// pointy top hexagons with odd rows shifted to the left
+		HexOrientation::PointyTopOddLeft => {
+			// even row with BitwiseAND
+			if source.1 & 1 == 0 {
+				// north-east
+				if source.0 + 1 < max_column && source.1 + 1 < max_row {
+					neighbours.push((source.0 + 1, source.1 + 1))
+				}
+				// east
+				if source.0 + 1 < max_column {
+					neighbours.push((source.0 + 1, source.1))
+				}
+				// south-east
+				if source.0 + 1 < max_column && source.1 - 1 > min_row {
+					neighbours.push((source.0 + 1, source.1 - 1))
+				}
+				// south-west
+				if source.1 - 1 > min_row {
+					neighbours.push((source.0, source.1 - 1))
+				}
+				// west
+				if source.0 - 1 > min_column {
+					neighbours.push((source.0 - 1, source.1))
+				}
+				// north-west
+				if source.1 + 1 < max_row {
+					neighbours.push((source.0, source.1 + 1))
+				}
+			} else {
+				// north-east
+				if source.1 + 1 < max_row {
+					neighbours.push((source.0, source.1 + 1))
+				}
+				// east
+				if source.0 + 1 < max_column {
+					neighbours.push((source.0 + 1, source.1))
+				}
+				// south-east
+				if source.1 - 1 > min_row {
+					neighbours.push((source.0, source.1 - 1))
+				}
+				// south-west
+				if source.0 - 1 > min_column && source.1 - 1 > min_row {
+					neighbours.push((source.0 - 1, source.1 - 1))
+				}
+				// west
+				if source.0 - 1 > min_column {
+					neighbours.push((source.0 - 1, source.1))
+				}
+				// north-west
+				if source.0 - 1 > min_column && source.1 + 1 < max_row {
+					neighbours.push((source.0 - 1, source.1 + 1))
 				}
 			}
 		}
@@ -923,6 +1125,86 @@ mod tests {
 		assert_eq!(expected_neighbour_count, neighbours.len());
 	}
 	#[test]
+	/// Expands an even node in a pointy hexagon layout with odd rows shifted right
+	fn pointy_top_odd_right_even_node_neighbours() {
+		let source: (i32, i32) = (2, 2);
+		let orientation = HexOrientation::PointyTopOddRight;
+		let min_column = -1;
+		let max_column = 4;
+		let min_row = -1;
+		let max_row = 4;
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
+		let actual = vec![(2, 3), (3, 2), (2, 1), (1, 1), (1, 2), (1, 3)];
+		assert_eq!(actual, neighbours);
+	}
+	#[test]
+	/// Expands an odd node in a pointy hexagon layout with odd rows shifted right
+	fn pointy_top_odd_right_odd_node_neighbours() {
+		let source: (i32, i32) = (1, 1);
+		let orientation = HexOrientation::PointyTopOddRight;
+		let min_column = -1;
+		let max_column = 4;
+		let min_row = -1;
+		let max_row = 4;
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
+		let actual = vec![(2, 2), (2, 1), (2, 0), (1, 0), (0, 1), (1, 2)];
+		assert_eq!(actual, neighbours);
+	}
+	#[test]
+	/// Expands an even node in a pointy hexagon layout with odd rows shifted left
+	fn pointy_top_odd_left_even_node_neighbours() {
+		let source: (i32, i32) = (2, 2);
+		let orientation = HexOrientation::PointyTopOddLeft;
+		let min_column = -1;
+		let max_column = 4;
+		let min_row = -1;
+		let max_row = 4;
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
+		let actual = vec![(3, 3), (3, 2), (3, 1), (2, 1), (1, 2), (2, 3)];
+		assert_eq!(actual, neighbours);
+	}
+	#[test]
+	/// Expands an odd node in a pointy hexagon layout with odd rows shifted left
+	fn pointy_top_odd_left_odd_node_neighbours() {
+		let source: (i32, i32) = (1, 1);
+		let orientation = HexOrientation::PointyTopOddLeft;
+		let min_column = -1;
+		let max_column = 4;
+		let min_row = -1;
+		let max_row = 4;
+		let neighbours = node_neighbours_offset(
+			source,
+			&orientation,
+			min_column,
+			max_column,
+			min_row,
+			max_row,
+		);
+		let actual = vec![(1, 2), (2, 1), (1, 0), (0, 0), (0, 1), (0, 2)];
+		assert_eq!(actual, neighbours);
+	}
+	#[test]
 	/// convert axial coordinates to cubic
 	fn axial_to_cubic_cords() {
 		let axial: (i32, i32) = (2, 1);
@@ -992,6 +1274,22 @@ mod tests {
 		assert_eq!(actual, result);
 	}
 	#[test]
+	/// convert axial coords to offset in a PointyTopOddRight grid orienation
+	fn convert_axial_to_offset_odd_right() {
+		let source: (i32, i32) = (-1, -1);
+		let result = axial_to_offset(source, &HexOrientation::PointyTopOddRight);
+		let actual: (i32, i32) = (-2, -1);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert axial coords to offset in a PointyTopOddLeft grid orienation
+	fn convert_axial_to_offset_odd_left() {
+		let source: (i32, i32) = (-1, -1);
+		let result = axial_to_offset(source, &HexOrientation::PointyTopOddLeft);
+		let actual: (i32, i32) = (-1, -1);
+		assert_eq!(actual, result);
+	}
+	#[test]
 	/// convert cubic coords to offset in a FlatTopOddUp grid orientation
 	fn convert_cubic_to_offset_odd_up() {
 		let source: (i32, i32, i32) = (-2, 3, -1);
@@ -1013,6 +1311,22 @@ mod tests {
 		let source: (i32, i32, i32) = (-1, 1, 0);
 		let result = cubic_to_offset(source, &HexOrientation::FlatTopOddDown);
 		let actual: (i32, i32) = (-1, 0);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert cubic coords to offset in a PointyTopOddRight grid orientation
+	fn convert_cubic_to_offset_odd_right() {
+		let source: (i32, i32, i32) = (1, -2, 1);
+		let result = cubic_to_offset(source, &HexOrientation::PointyTopOddRight);
+		let actual: (i32, i32) = (1, 1);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// convert cubic coords to offset in a PointyTopOddLeft grid orientation
+	fn convert_cubic_to_offset_odd_left() {
+		let source: (i32, i32, i32) = (1, -2, 1);
+		let result = cubic_to_offset(source, &HexOrientation::PointyTopOddLeft);
+		let actual: (i32, i32) = (2, 1);
 		assert_eq!(actual, result);
 	}
 	#[test]
@@ -1131,6 +1445,22 @@ mod tests {
 		let source: (i32, i32) = (9, 9);
 		let result = offset_to_cubic(source, &HexOrientation::FlatTopOddDown);
 		let actual: (i32, i32, i32) = (9, -13, 4);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// Validate offset to cubic conversion in pointy topped odd right orientation
+	fn convert_offset_to_cubic_pointy_top_odd_right() {
+		let source: (i32, i32) = (1, 1);
+		let result = offset_to_cubic(source, &HexOrientation::PointyTopOddRight);
+		let actual: (i32, i32, i32) = (1, -2, 1);
+		assert_eq!(actual, result);
+	}
+	#[test]
+	/// Validate offset to cubic conversion in pointy topped odd left orientation
+	fn convert_offset_to_cubic_pointy_top_odd_left() {
+		let source: (i32, i32) = (1, 1);
+		let result = offset_to_cubic(source, &HexOrientation::PointyTopOddLeft);
+		let actual: (i32, i32, i32) = (0, -1, 1);
 		assert_eq!(actual, result);
 	}
 }
