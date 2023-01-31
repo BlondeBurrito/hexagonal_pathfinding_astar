@@ -51,6 +51,7 @@ Table of contents
         1. [Flat Topped - odd columns shifted down](#ftod)
         1. [Pointy Top - odd rows shifted right](#ptor)
         1. [Pointy Top - odd rows shifted left](#ptol)
+        1. [Spiral Hex Coordinates](#sh)
 4. [What Coordinate System Should You Use?](#wcssyyu)
 5. [How to use](#howto)
 
@@ -458,6 +459,52 @@ south-west = (column - 1, row - 1)
 west       = (column -1, row)
 north-west = (column - 1, row + 1)
 ```
+
+### Spiral Hex Coordinates <a name="sh"></a>
+
+Spiral Hex is a form of labeling a hexagon with a single digit in spiralling rings, for instance:
+
+```txt
+                              _________
+                             /         \
+                            /           \
+                  _________/    Ring2    \_________
+                 /         \      7      /         \
+                /           \           /           \
+      _________/    Ring2    \_________/    Ring2    \_________
+     /         \      18     /         \      8      /         \
+    /           \           /           \           /           \
+   /    Ring2    \_________/    Ring1    \_________/    Ring2    \
+   \      17     /         \      1      /         \      9      /
+    \           /           \           /           \           /
+     \_________/    Ring1    \_________/    Ring1    \_________/
+     /         \      6      /         \      2      /         \
+    /           \           /           \           /           \
+   /    Ring2    \_________/             \_________/    Ring2    \
+   \     16      /         \      0      /         \      10     /
+    \           /           \           /           \           /
+     \_________/    Ring1    \_________/    Ring1    \_________/
+     /         \      5      /         \      3      /         \
+    /           \           /           \           /           \
+   /    Ring2    \_________/    Ring1    \_________/    Ring2    \
+   \      15     /         \      4      /         \      11     /
+    \           /           \           /           \           /
+     \_________/    Ring2    \_________/    Ring2    \_________/
+               \      14     /         \      12     /
+                \           /           \           /
+                 \_________/    Ring2    \_________/
+                           \      13     /
+                            \           /
+                             \_________/
+```
+
+I'd like to thank [virtualritz](https://github.com/virtualritz) for requesting this feature and the inspiration from [ljedrz](https://github.com/ljedrz) and their crate [hex-spiral](https://crates.io/crates/hex-spiral).
+
+I had also hoped to support the Spiral Honeycomb Mosaic system inspired by [Paul Bourke](http://paulbourke.net/geometry/tilingplane/) but currently it's proving a bit too challenging.
+
+Note that this library is very strict in that hexagons must be labelled in a clockwise fashion as above.
+
+As opposed to the other coordinate systems covered here node neighbour calculations have not been included in the A-Star Spiral Hex calcualtion - instead Spiral Hex coordinates are converted to Cubic coordinates as it makes them slightly easier to handle.
 
 ## What Coordinate System Should You Use? <a name="wcssyyu"></a>
 

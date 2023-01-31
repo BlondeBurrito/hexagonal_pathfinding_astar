@@ -110,10 +110,32 @@
 //! ### Pointy Topped - odd rows shifted left
 //!
 //! Please refer to the README of the proect for an illustration - ascii hexagons with pointy tops are very hard to draw.
+//!
+//! ### Spiral Hex
+//!
+//! Based on [ljedrz](https://crates.io/crates/hex-spiral) Spiral Hex is represented by a circular grid
+//! where each hexagon is identifiable with a single digit with an origin 0:
+//!
+//! ```txt
+//!              _______
+//!             /       \
+//!     _______/    1    \_______
+//!    /       \         /       \
+//!   /    6    \_______/    2    \
+//!   \         /       \         /
+//!    \_______/    x    \_______/
+//!    /       \         /       \
+//!   /    5    \_______/    3    \
+//!   \         /       \         /
+//!    \_______/    4    \_______/
+//!            \         /
+//!             \_______/
+//! ```
 
 pub mod astar_axial;
 pub mod astar_cubic;
 pub mod astar_offset;
+pub mod astar_spiral_hex;
 pub mod helpers;
 
 /// Specifies the orientation of the hexagon space in Offset layouts. This is

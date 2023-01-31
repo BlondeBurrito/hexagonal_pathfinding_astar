@@ -233,6 +233,7 @@
 //! west       = (column -1, row)
 //! north-west = (column - 1, row + 1)
 //! ```
+//!
 
 use crate::HexOrientation;
 
@@ -418,6 +419,175 @@ pub fn cubic_to_offset(node_coords: (i32, i32, i32), orientation: &HexOrientatio
 			(q, r)
 		}
 	}
+}
+/// Spiral Hex coordinates begin at the origin and from the Northern face wrap around the hexagon
+/// in rings with a single coordinate denoting its position.
+///
+/// ```txt
+///              _______
+///             /       \
+///     _______/    1    \_______
+///    /       \         /       \
+///   /    6    \_______/    2    \
+///   \         /       \         /
+///    \_______/    0    \_______/
+///    /       \         /       \
+///   /    5    \_______/    3    \
+///   \         /       \         /
+///    \_______/    4    \_______/
+///            \         /
+///             \_______/
+/// ```
+///
+/// To convert this single coordinate into the 3 coordinate cubic system we must idenitfy the
+/// ring our Spiral Hex sits on, retrive all the coordinates on that ring, and compare them
+/// to all the cubic based hexagons on an identical ring.
+///
+/// Effectively we create two ordered lists of hexagons and the index containing the Spiral
+/// coordinate corresponds to the index of the same node in the cubic list.
+pub fn spiral_hex_to_cubic(coord: i32) -> (i32, i32, i32) {
+	if coord == 0 {
+		return (0, 0, 0);
+	}
+	// build a list of node coordinates that correspond to the first coord of a new ring
+	// up to however many rings are needed to house the original `coord`
+	// e.g [0, 1, 7, 19, 37, 61,...]
+	let mut rings: Vec<i32> = Vec::new();
+	for x in 0..=(coord + 1) {
+		if x == 0 {
+			rings.push(0);
+		} else {
+			let v = 3 * (x - 1) * x + 1;
+			rings.push(v);
+		}
+	}
+	// each element of `rings` indicates the starting coordinate of a new ring,
+	// by comparing the `coord` to the start of each new ring we can find the ring it actually
+	// sits on via the index of the list
+	let ring = rings
+		.iter()
+		.position(|ring_start| coord < *ring_start)
+		.expect(&format!(
+			"Rings: {:?}, does not contain a value greater than coord {}",
+			rings, coord
+		)) - 1;
+
+	// from the ring we can find all the nodes on it in spiral and cubic coord systems
+	let ring_nodes_spiral = node_ring_spiral_hex(ring as i32);
+	let ring_nodes_cubic = node_ring_cubic((0, 0, 0), ring as i32);
+
+	if ring_nodes_spiral.len() != ring_nodes_cubic.len() {
+		panic!("Rings of spiral and cubic nodes contain a different number of nodes");
+	}
+
+	// NB: the cubic list of nodes begins with a South-Westerly hexagon, the Spiral list begins with the most Northely hexagon moving clockwise.
+	// The Spiral list needs to be "rotated" so that the indices of the two lists align.
+	// This rotation is by a factor of `2 * ring - 1`, where we remove the last node
+	// and insert it at the beginning of the vector iteratively
+	let mut ring_nodes_spiral_rotated: Vec<i32> = ring_nodes_spiral.clone();
+	let rotation_factor = 2 * ring - 1;
+	for _i in 0..rotation_factor {
+		let last = ring_nodes_spiral_rotated.pop().unwrap();
+		ring_nodes_spiral_rotated.insert(0, last)
+	}
+
+	// both vectors are ordered so the index in the spiral list corrsponding to `coord` is the
+	// same index in the cubic list pointing to the cubic version of that coordinate
+	let mut index: i32 = -1;
+	'label: for (i, v) in ring_nodes_spiral_rotated.iter().enumerate() {
+		if *v == coord {
+			index = i as i32;
+			break 'label;
+		}
+	}
+	// index should never be negative, i.e the coordinate hasn't been found in the ring
+	if index == -1 {
+		panic!(
+			"Spiral coord {} is not in ring {} with members {:?}",
+			coord, ring, ring_nodes_spiral_rotated
+		)
+	}
+	ring_nodes_cubic[index as usize]
+}
+/// Cubic coordinates are made up of three peices of data, by examing the ring which a node
+/// sits on we can convert the coordinate into a Spiral Hex coordinate containing just a single
+/// peice of data.
+///
+/// This assumes the cubic coordinate system is ordered such:
+///
+/// ```txt
+///              _______
+///             /   0   \
+///     _______/         \_______
+///    /  -1   \ -1    1 /   1   \
+///   /         \_______/         \
+///   \ 0     1 /   x   \ -1    0 /
+///    \_______/         \_______/
+///    /  -1   \ y     z /   1   \
+///   /         \_______/         \
+///   \ 1     0 /   0   \ 0    -1 /
+///    \_______/         \_______/
+///            \ 1    -1 /
+///             \_______/
+/// ```
+///
+/// And the Spiral Hex system is ordered:
+///
+/// ```txt
+///              _______
+///             /       \
+///     _______/    1    \_______
+///    /       \         /       \
+///   /    6    \_______/    2    \
+///   \         /       \         /
+///    \_______/    x    \_______/
+///    /       \         /       \
+///   /    5    \_______/    3    \
+///   \         /       \         /
+///    \_______/    4    \_______/
+///            \         /
+///             \_______/
+/// ```
+pub fn cubic_to_spiral_hex(coord: (i32, i32, i32)) -> i32 {
+	if coord.0 == 0 && coord.1 == 0 && coord.2 == 0 {
+		return 0;
+	}
+	// the largest absolute element indicates what ring the node sits on
+	let ring = [coord.0.abs(), coord.1.abs(), coord.2.abs()]
+		.into_iter()
+		.max()
+		.unwrap();
+
+	// as the ring is known all cubic and spiral hex coordinates can be found on the ring
+	let ring_nodes_cubic = node_ring_cubic((0, 0, 0), ring);
+	let ring_nodes_spiral = node_ring_spiral_hex(ring);
+
+	// NB: the list of spiral coords is offset from the cubic coords, we need to "rotate" the list
+	// so that they both align, the index containing the cubic value is then the index needed
+	// to find the spiral value
+	let mut ring_nodes_spiral_rotated: Vec<i32> = ring_nodes_spiral.clone();
+	let rotation_factor = 2 * ring - 1;
+	for _i in 0..rotation_factor {
+		let last = ring_nodes_spiral_rotated.pop().unwrap();
+		ring_nodes_spiral_rotated.insert(0, last)
+	}
+	// both vectors are ordered so the index in the cubic list corrsponding to `coord` is the
+	// same index in the spiral list pointing to the spiral version of that coordinate
+	let mut index: i32 = -1;
+	'label: for (i, v) in ring_nodes_cubic.iter().enumerate() {
+		if *v == coord {
+			index = i as i32;
+			break 'label;
+		}
+	}
+	// index should never be negative, i.e the coordinate hasn't been found in the ring
+	if index == -1 {
+		panic!(
+			"Cubic coord {:?} is not in ring {} with members {:?}",
+			coord, ring, ring_nodes_cubic
+		)
+	}
+	ring_nodes_spiral_rotated[index as usize]
 }
 /// Finds the neighboring nodes in an Offset coordinate system. It must be in a grid-like formatiom
 ///  where `min_column`,`max_column` `min_row` and `max_row` inputs define the outer boundary of the grid space, note they
@@ -803,6 +973,9 @@ pub fn node_neighbours_axial(source: (i32, i32), count_rings_from_origin: i32) -
 ///                   \         /
 ///                    \_______/
 /// ```
+///
+/// Note that the first element of the return list begins with a South-Western node and
+/// moves clockwise
 pub fn node_ring_cubic(source: (i32, i32, i32), radius: i32) -> Vec<(i32, i32, i32)> {
 	let mut ring_nodes = Vec::new();
 	// unit lengths to move in a direction of a face, the array starts with the North direction
@@ -907,6 +1080,64 @@ pub fn node_ring_cubic(source: (i32, i32, i32), radius: i32) -> Vec<(i32, i32, i
 			// store node
 			ring_nodes.push(ring_node_current);
 		}
+	}
+	ring_nodes
+}
+/// Finds the nodes on a ring around the centre in a Spiral Hex coordinate system. `radius` is the
+/// particular ring you want to know the nodes of.
+///
+/// For instance `radius = 2` for the second ring around the origin:
+/// ```txt
+///                     _______
+///                    /       \
+///            _______/  RING2  \_______
+///           /       \         /       \
+///   _______/  RING2  \_______/  RING2  \_______
+///  /       \         /       \         /       \
+/// /  RING2  \_______/         \_______/  RING2  \
+/// \         /       \         /       \         /
+///  \_______/         \_______/         \_______/
+///  /       \         /       \         /       \
+/// /  RING2  \_______/    x    \_______/  RING2  \
+/// \         /       \         /       \         /
+///  \_______/         \_______/         \_______/
+///  /       \         /       \         /       \
+/// /  RING2  \_______/         \_______/  RING2  \
+/// \         /       \         /       \         /
+///  \_______/  RING2  \_______/  RING2  \_______/
+///          \         /       \         /
+///           \_______/  RING2  \_______/
+///                   \         /
+///                    \_______/
+/// ```
+///
+/// For `radius = 2` this will find the starting coordinate of the ring, `7` and iterate over the ring up to the point where a new ring would be formed at node `19`, returning
+/// `vec![7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]`.
+///
+/// Note that the first element of the return list is the Northern node moving clockwise
+pub fn node_ring_spiral_hex(radius: i32) -> Vec<i32> {
+	let mut ring_nodes = Vec::new();
+	// find the starting coordinate of the given ring
+	// e.g for ring 2 the starting node is 7
+	let start_node = {
+		if radius == 0 {
+			0
+		} else {
+			3 * (radius - 1) * radius + 1
+		}
+	};
+	// find the starting coordinate of the next ring to be an exclusive limit
+	let out_of_bounds = {
+		if radius == 0 {
+			0
+		} else {
+			3 * ((radius + 1) - 1) * (radius + 1) + 1
+		}
+	};
+	// as spiral coordinates just wrap around the hexagon grid we simply push each value
+	// between the start and end/out of bounds
+	for i in start_node..out_of_bounds {
+		ring_nodes.push(i);
 	}
 	ring_nodes
 }
@@ -1462,5 +1693,61 @@ mod tests {
 		let result = offset_to_cubic(source, &HexOrientation::PointyTopOddLeft);
 		let actual: (i32, i32, i32) = (0, -1, 1);
 		assert_eq!(actual, result);
+	}
+	/// Based on Spiral Hex coordinates find the nodes sat along a ring
+	#[test]
+	fn find_nodes_on_spiral_ring() {
+		let ring: i32 = 2;
+		let nodes_on_ring = node_ring_spiral_hex(ring);
+		let actual = vec![7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+		assert_eq!(nodes_on_ring, actual);
+	}
+	/// Test the special conversion of the Spiral Hex origin to cubic space
+	#[test]
+	fn convert_spiral_hex_to_cubic_zero() {
+		let start: i32 = 0;
+		let cubic = spiral_hex_to_cubic(start);
+		let actual = (0, 0, 0);
+		assert_eq!(cubic, actual)
+	}
+	/// Convert a node on the first hexagon ring from Spiral Hex to cubic space
+	#[test]
+	fn convert_spiral_hex_to_cubic_ring_one() {
+		let start: i32 = 6;
+		let cubic = spiral_hex_to_cubic(start);
+		let actual = (-1, 0, 1);
+		assert_eq!(cubic, actual)
+	}
+	/// Convert a node on the second hexagon ring for Spiral Hex to cubic
+	#[test]
+	fn convert_spiral_hex_to_cubic_ring_two() {
+		let start: i32 = 9;
+		let cubic = spiral_hex_to_cubic(start);
+		let actual = (2, -2, 0);
+		assert_eq!(cubic, actual)
+	}
+	/// Test the origin conversion of cubic to spiral hex
+	#[test]
+	fn convert_cubic_to_spiral_hex_zero() {
+		let start: (i32, i32, i32) = (0, 0, 0);
+		let spiral = cubic_to_spiral_hex(start);
+		let actual = 0;
+		assert_eq!(spiral, actual)
+	}
+	/// Convert a node on ring 1 frm cubic to spiral hex
+	#[test]
+	fn convert_cubic_to_spiral_hex_ring_one() {
+		let start: (i32, i32, i32) = (-1, 1, 0);
+		let spiral = cubic_to_spiral_hex(start);
+		let actual = 5;
+		assert_eq!(spiral, actual)
+	}
+	/// Convert a node on ring 2 frm cubic to spiral hex
+	#[test]
+	fn convert_cubic_to_spiral_hex_ring_two() {
+		let start: (i32, i32, i32) = (2, -1, -1);
+		let spiral = cubic_to_spiral_hex(start);
+		let actual = 10;
+		assert_eq!(spiral, actual)
 	}
 }
