@@ -234,7 +234,6 @@
 //! north-west = (column - 1, row + 1)
 //! ```
 //!
-//! TODO COPY AND PASTE README CONVERSION HERE
 
 use crate::HexOrientation;
 
